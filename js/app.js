@@ -1,25 +1,37 @@
 /* ============================================================
-   再观 Zaiguan — 应用主逻辑
-   上传照片 → 识别线索 → 记录感受 → 形成档案
+   再观 Zaiguan — 应用主逻辑(Rijksstudio 式重构)
+   信息架构:收藏集(Collections) · 全部作品 · 裁剪细节 · 个人经验
    ============================================================ */
 
-const STORE_KEY = "zaiguan.v1";
+const STORE_KEY = "zaiguan.v2";
 const REPO_URL = "https://github.com/KINGKAZMAX/zaiguan";
-const SITE_URL = "https://kingkazmax.github.io/zaiguan/";
 
 let S = loadState();
-const ui = { tab: "records", archive: { cat: "全部", tag: "", q: "" } };
-let editTmp = null; // 展品卡编辑中的临时标签/评分
+const ui = { tab: "records", archive: { cat: "全部", tag: "", q: "", fav: false } };
+let editTmp = null; // 展品卡编辑上下文(标签/评分/裁剪)
 
 /* ---------------- 状态与持久化 ---------------- */
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { const s = JSON.parse(raw); if (Array.isArray(s.books)) return s; }
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (Array.isArray(s.books)) { normalize(s); return s; }
+    }
   } catch (e) {}
-  const seeded = { books: seedBooks(), v: 1 };
+  const seeded = { books: seedBooks(), v: 2 };
   try { localStorage.setItem(STORE_KEY, JSON.stringify(seeded)); } catch (e) {}
   return seeded;
+}
+function normalize(s) {
+  for (const b of s.books || []) {
+    if (!Array.isArray(b.items)) b.items = [];
+    for (const it of b.items) {
+      it.crops = Array.isArray(it.crops) ? it.crops : [];
+      it.experience = it.experience || {};
+      it.experience.favorite = !!it.experience.favorite;
+    }
+  }
 }
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); return true; }
@@ -41,83 +53,73 @@ function render(scrollTop) {
   if (scrollTop !== false) view.scrollTop = 0;
 }
 
-/* ================= 记录 · 首页 ================= */
+/* ================= 收藏集(Collections)================= */
 function pageRecords() {
   const books = [...S.books].sort((a, b) => (b.visitDate || "").localeCompare(a.visitDate || ""));
   const items = allItems();
   const feelings = items.reduce((n, x) => n + (x.item.experience.feeling || "").length, 0);
+  const favs = items.filter(x => x.item.experience.favorite).length;
 
   let html = `<div class="page">
-    <div class="hero">
-      <svg class="mtn" viewBox="0 0 420 110" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 110 L48 40 L86 74 L138 26 L188 82 L236 52 L286 92 L332 58 L378 88 L420 70 L420 110 Z" fill="#3a6273" opacity=".42"/>
-        <path d="M0 110 L64 66 L124 96 L192 54 L248 86 L312 66 L368 92 L420 76 L420 110 Z" fill="#28505e" opacity=".62"/>
-        <path d="M0 92 L72 82 L136 102 L216 80 L300 100 L372 90 L420 98 L420 110 L0 110 Z" fill="#1c3640" opacity=".92"/>
-      </svg>
-      <div class="hero-inner">
-        <span class="seal hero-seal">观</span>
-        <div class="vsub">让观看发生第二次</div>
-        <h1 class="vtitle">再观</h1>
+    <header class="masthead">
+      <h1>再观</h1>
+      <p class="tagline">让观看发生第二次 — 观展后个人文化记忆系统</p>
+      <div class="mast-stats">
+        <span><b>${books.length}</b> 收藏集</span><i>·</i>
+        <span><b>${items.length}</b> 件作品</span><i>·</i>
+        <span><b>${favs}</b> 最爱</span><i>·</i>
+        <span><b>${feelings}</b> 字感受</span>
       </div>
-      <div class="hero-flow">
-        <span>上传照片</span><i>→</i><span>识别线索</span><i>→</i><span>记录感受</span><i>→</i><span>形成档案</span>
-      </div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-cell"><b>${books.length}</b><span>观展记录册</span></div>
-      <div class="stat-cell"><b>${items.length}</b><span>展品记录卡</span></div>
-      <div class="stat-cell"><b>${feelings}</b><span>感受字数</span></div>
-    </div>`;
+    </header>`;
 
   if (!books.length) {
     html += `<div class="empty">
-      <div class="seal">观</div>
-      <h3>还没有观展记录</h3>
-      <p>观展结束后,从相册选取本次拍摄的照片,<br>开始整理你的第一册观展记录。</p>
+      <div class="empty-mark">观</div>
+      <h3>从一次观展开始</h3>
+      <p>观展结束后,从相册选取本次拍摄的照片,<br>整理你的第一册收藏集。</p>
+      <button class="btn btn-primary btn-block" style="margin-top:18px" onclick="App.openCreate()">新建收藏集</button>
     </div>`;
   } else {
-    html += `<div class="section-title">观展记录库<span class="more" onclick="App.openCreate()">＋ 新建</span></div>`;
+    html += `<div class="label-row"><span class="sec-label">收藏集</span><span class="sec-count">${books.length} Sets</span></div>
+    <div class="col-grid">`;
     for (const b of books) {
-      const confirmed = b.items.filter(i => i.status === "confirmed" || i.status === "modified").length;
-      const pct = b.items.length ? Math.round(confirmed / b.items.length * 100) : 0;
       const first = b.items[0];
-      const cat = first ? (first.knowledge.category || "其他") : "其他";
-      const pal = CAT_PALETTE[cat] || CAT_PALETTE["其他"];
-      html += `<div class="card book" onclick="App.openBook('${b.id}')">
-        <div class="book-cover" style="--c1:${pal[0]};--c2:${pal[1]}">
-          <span class="glyph">${esc(b.exhibition).replace(/[^\u4e00-\u9fa5]/g, "").slice(0, 1) || "展"}</span>
+      const favCount = b.items.filter(i => i.experience.favorite).length;
+      const cover = first
+        ? (first.photo ? `<img src="${first.photo}" alt="">` : posterHTML(first.knowledge.name || "未识别", first.knowledge.category))
+        : `<div class="cover-blank">空</div>`;
+      html += `<article class="set-card" onclick="App.openBook('${b.id}')">
+        <div class="set-cover">${cover}
+          <span class="set-count">${b.items.length}</span>
+          ${favCount ? `<span class="set-fav">♥ ${favCount}</span>` : ""}
         </div>
-        <div class="book-body">
-          <h3>${esc(b.exhibition)}</h3>
-          <div class="book-meta">${esc(b.venue)} · ${fmtDate(b.visitDate)}</div>
-          <div class="book-foot">
-            <span class="chip">${b.items.length} 件展品</span>
-            <div class="progress"><i style="width:${pct}%"></i></div>
-            <span class="chip st-${confirmed === b.items.length && b.items.length ? "confirmed" : "pending"}">${pct}%</span>
-          </div>
-        </div>
-      </div>`;
+        <h3>${esc(b.exhibition)}</h3>
+        <p>${esc(b.venue)}</p>
+        <time>${fmtDate(b.visitDate)}</time>
+      </article>`;
     }
+    html += `<button class="set-card set-new" onclick="App.openCreate()">
+      <div class="set-cover"><span class="plus">＋</span></div>
+      <h3 style="color:var(--ink-3)">新建收藏集</h3>
+      <p>&nbsp;</p><time>&nbsp;</time>
+    </button></div>`;
   }
   html += `
-    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.openCreate()">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      新建观展记录
-    </button>
-    <div class="hint-box" style="margin-top:12px">照片与记录仅保存在<b>你的浏览器本地</b>,不会上传到任何服务器。</div>
-    <div class="footer-cred">再观 Zaiguan · 观展后个人文化记忆系统</div>
+    <div class="privacy-note">照片与记录仅保存在你的浏览器本地,不会上传到任何服务器。</div>
+    <div class="footer-cred">再观 ZAIGUAN — Collections of Seeing Again</div>
   </div>`;
   return html;
 }
 
-/* ================= 档案 ================= */
+/* ================= 全部作品(Artworks)================= */
 function pageArchive() {
   const F = ui.archive;
   let items = allItems();
-  const tags = [...new Set(items.flatMap(x => x.item.experience.tags || []))].slice(0, 14);
+  const tags = [...new Set(items.flatMap(x => x.item.experience.tags || []))].slice(0, 12);
 
   if (F.cat !== "全部") items = items.filter(x => (x.item.knowledge.category || "其他") === F.cat);
   if (F.tag) items = items.filter(x => (x.item.experience.tags || []).includes(F.tag));
+  if (F.fav) items = items.filter(x => x.item.experience.favorite);
   if (F.q) {
     const q = F.q.toLowerCase();
     items = items.filter(x =>
@@ -128,45 +130,46 @@ function pageArchive() {
   items.sort((a, b) => (b.book.visitDate || "").localeCompare(a.book.visitDate || ""));
 
   const catChips = ["全部", ...CATEGORIES].map(c =>
-    `<button class="fchip ${F.cat === c ? "on" : ""}" onclick="App.setFilter('cat','${c}')">${c}</button>`).join("");
-  const tagChips = F.tag || tags.length ? `<div style="margin:2px 0 4px;font-size:11px;color:var(--ink-3)">按标签</div>
-    <div class="filter-scroll">${F.tag ? `<button class="fchip on" onclick="App.setFilter('tag','')">${esc(F.tag)} ✕</button>` : ""}
-    ${tags.filter(t => t !== F.tag).map(t => `<button class="fchip" onclick="App.setFilter('tag','${esc(t)}')">#${esc(t)}</button>`).join("")}</div>` : "";
+    `<button class="fchip ${!F.fav && F.cat === c ? "on" : ""}" onclick="App.setFilter('cat','${c}')">${c}</button>`).join("");
+  const favChip = `<button class="fchip fav ${F.fav ? "on" : ""}" onclick="App.toggleFavFilter()">♥ 最爱</button>`;
+  const tagChips = (F.tag || tags.length) ? `<div class="filter-scroll">
+    ${F.tag ? `<button class="fchip on" onclick="App.setFilter('tag','')">${esc(F.tag)} ✕</button>` : ""}
+    ${tags.filter(t => t !== F.tag).slice(0, 10).map(t => `<button class="fchip" onclick="App.setFilter('tag','${esc(t)}')">#${esc(t)}</button>`).join("")}
+  </div>` : "";
 
-  let groups = "";
-  let lastKey = "";
-  for (const { book, item } of items) {
-    const key = (book.visitDate || "未知日期").slice(0, 7);
-    if (key !== lastKey) {
-      lastKey = key;
-      groups += `<div class="timeline-date">${key.replace("-", " 年 ")} 月</div>`;
-    }
+  const cards = items.map(({ book, item }) => {
     const name = item.knowledge.name || "未识别展品";
-    const cat = item.knowledge.category || "其他";
-    const stars = item.experience.rating ? `<span class="mini-stars">${"★".repeat(item.experience.rating)}</span>` : "";
-    const tagn = (item.experience.tags || []).length ? `<span class="chip">#${esc(item.experience.tags[0])}</span>` : "";
-    groups += `<div class="card arch-item" onclick="App.openItem('${book.id}','${item.id}')">
-      <div class="arch-thumb">${item.photo ? `<img src="${item.photo}" alt="">` : posterHTML(name, cat, true)}</div>
-      <div class="arch-body">
-        <h4>${esc(name)}</h4>
-        <div class="sub">${esc(book.venue)} · ${esc(book.exhibition)}</div>
-        <div class="meta"><span class="chip st-${item.status}">${STATUS[item.status].label}</span>${stars}${tagn}</div>
+    const fav = item.experience.favorite;
+    const img = item.photo
+      ? `<img src="${item.photo}" alt="${esc(name)}" loading="lazy">`
+      : posterHTML(name, item.knowledge.category);
+    return `<figure class="m-card" onclick="App.openItem('${book.id}','${item.id}')">
+      <div class="m-img">${img}
+        <button class="heart ${fav ? "on" : ""}" onclick="event.stopPropagation();App.toggleFav('${book.id}','${item.id}')" aria-label="最爱">♥</button>
       </div>
-    </div>`;
-  }
+      <figcaption>
+        <b>${esc(name)}</b>
+        <span>${esc(item.knowledge.artist || "")}${item.knowledge.era ? " · " + esc(item.knowledge.era) : ""}</span>
+        <em>${esc(book.venue)}</em>
+        <i class="st st-${item.status}">${STATUS[item.status].label}${item.crops.length ? " · " + item.crops.length + " 细节" : ""}</i>
+      </figcaption>
+    </figure>`;
+  }).join("");
 
   return `<div class="page">
-    <div class="large-title">个人文化档案</div>
-    <div class="page-sub">跨越展览的个人观看史 · ${allItems().length} 条展品记录</div>
+    <header class="masthead slim">
+      <h1>全部作品</h1>
+      <p class="tagline">跨越展览的个人收藏 · ${allItems().length} 件</p>
+    </header>
     <div class="search-bar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input placeholder="搜索展品、艺术家、展览、感受…" value="${esc(F.q)}" oninput="App.setFilter('q', this.value)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input placeholder="搜索作品、艺术家、展览、感受…" value="${esc(F.q)}" oninput="App.setFilter('q', this.value)">
     </div>
-    <div class="filter-scroll">${catChips}</div>
+    <div class="filter-scroll">${favChip}${catChips}</div>
     ${tagChips}
-    ${items.length ? `<div class="timeline-group">${groups}</div>` : `<div class="empty" style="padding-top:36px">
-      <h3>没有匹配的记录</h3><p>换个筛选条件,或先去「记录」新建一册观展记录。</p></div>`}
-    <div class="footer-cred">每一次记录,都在让档案生长</div>
+    ${items.length ? `<div class="masonry">${cards}</div>` : `<div class="empty" style="padding-top:40px">
+      <h3>没有匹配的作品</h3><p>换个筛选条件,或先去「收藏集」新建一册。</p></div>`}
+    <div class="footer-cred">Every visit, a growing collection</div>
   </div>`;
 }
 
@@ -174,11 +177,12 @@ function pageArchive() {
 function computeInsights() {
   const items = allItems();
   const tagCount = {}, tagBooks = {}, catCount = {}, eraCount = {}, artistCount = {};
-  let feelingChars = 0, rated = [], pubCount = 0;
+  let feelingChars = 0, rated = [], pubCount = 0, cropCount = 0;
   for (const { book, item } of items) {
     feelingChars += (item.experience.feeling || "").length;
     if (item.experience.rating) rated.push(item);
     if (item.experience.isPublic) pubCount++;
+    cropCount += (item.crops || []).length;
     for (const t of (item.experience.tags || [])) {
       tagCount[t] = (tagCount[t] || 0) + 1;
       (tagBooks[t] = tagBooks[t] || new Set()).add(book.id);
@@ -190,59 +194,60 @@ function computeInsights() {
     const a = item.knowledge.artist;
     if (a && !/佚名|失记载/.test(a)) artistCount[a] = (artistCount[a] || 0) + 1;
   }
-  return { items, tagCount, tagBooks, catCount, eraCount, artistCount, feelingChars, rated, pubCount };
+  return { items, tagCount, tagBooks, catCount, eraCount, artistCount, feelingChars, rated, pubCount, cropCount };
 }
 const topEntries = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n);
 
 function pageInsights() {
   const I = computeInsights();
   if (!I.items.length) {
-    return `<div class="page"><div class="large-title">兴趣线索</div>
-      <div class="empty"><div class="seal">索</div><h3>线索将在积累中浮现</h3>
-      <p>完成两册以上的观展记录后,<br>这里会呈现你的兴趣谱系与跨展览关联。</p></div></div>`;
+    return `<div class="page"><header class="masthead slim"><h1>线索</h1></header>
+      <div class="empty"><div class="empty-mark">索</div><h3>线索将在积累中浮现</h3>
+      <p>完成两册以上的观展记录后,<br>这里会呈现你的兴趣谱系。</p></div></div>`;
   }
   const avg = I.rated.length ? (I.rated.reduce((s, x) => s + x.item.experience.rating, 0) / I.rated.length).toFixed(1) : "—";
-  const bars = (entries, alt) => {
+  const bars = (entries) => {
     const max = Math.max(1, ...entries.map(e => e[1]));
-    return entries.map(([k, v]) => `<div class="hbar ${alt || ""}">
-      <div class="lab"><b>${esc(k)}</b><span>${v} 次</span></div>
+    return entries.map(([k, v]) => `<div class="hbar">
+      <div class="lab"><b>${esc(k)}</b><span>${v}</span></div>
       <div class="track"><i style="width:${Math.round(v / max * 100)}%"></i></div></div>`).join("");
   };
   const tagTop = topEntries(I.tagCount, 8), catTop = topEntries(I.catCount, 6), eraTop = topEntries(I.eraCount, 6), artTop = topEntries(I.artistCount, 5);
 
-  /* 洞察句生成 */
   const notes = [];
   const cross = Object.entries(I.tagBooks).filter(([t, s]) => s.size >= 2).sort((a, b) => b[1].size - a[1].size);
   for (const [t, s] of cross.slice(0, 2))
-    notes.push(`「<b>#${esc(t)}</b>」出现在你 ${s.size} 次观展记录中——这可能是一条值得持续追踪的兴趣线索。`);
+    notes.push(`「<b>#${esc(t)}</b>」出现在你 ${s.size} 册收藏集中——值得持续追踪的兴趣线索。`);
   if (tagTop[0] && !cross.some(c => c[0] === tagTop[0][0]))
     notes.push(`你最常标注的标签是「<b>#${esc(tagTop[0][0])}</b>」(${tagTop[0][1]} 次)。`);
-  if (catTop[0]) notes.push(`在 ${I.items.length} 件展品记录中,「<b>${esc(catTop[0][0])}</b>」占比最高(${Math.round(catTop[0][1] / I.items.length * 100)}%)。`);
+  if (catTop[0]) notes.push(`在 ${I.items.length} 件作品中,「<b>${esc(catTop[0][0])}</b>」占比最高(${Math.round(catTop[0][1] / I.items.length * 100)}%)。`);
   if (eraTop[0]) notes.push(`年代偏好上,你与「<b>${esc(eraTop[0][0])}</b>」相遇最多(${eraTop[0][1]} 次)。`);
+  if (I.cropCount) notes.push(`你裁下了 <b>${I.cropCount}</b> 处细节——细节即是你目光停留的证据。`);
   const full = I.rated.filter(x => x.item.experience.rating === 5).slice(0, 2);
   if (full.length) notes.push(`你为 ${full.map(x => `《${esc(x.item.knowledge.name)}》`).join("、")} 打过满分。`);
 
   return `<div class="page">
-    <div class="large-title">兴趣线索</div>
-    <div class="page-sub">多次观展之后,你反复关注什么</div>
-    <div class="insight-cards">
-      <div class="stat-cell"><b>${S.books.length}</b><span>观展次数</span></div>
-      <div class="stat-cell"><b>${I.items.length}</b><span>展品记录</span></div>
-      <div class="stat-cell"><b>${Object.keys(I.tagCount).length}</b><span>不同标签</span></div>
-      <div class="stat-cell"><b>${avg}</b><span>平均评分</span></div>
+    <header class="masthead slim"><h1>线索</h1>
+      <p class="tagline">多次观展之后,你反复关注什么</p></header>
+    <div class="stat-strip">
+      <div><b>${S.books.length}</b><span>收藏集</span></div>
+      <div><b>${I.items.length}</b><span>作品</span></div>
+      <div><b>${I.cropCount}</b><span>细节裁剪</span></div>
+      <div><b>${Object.keys(I.tagCount).length}</b><span>标签</span></div>
+      <div><b>${avg}</b><span>平均评分</span></div>
     </div>
 
-    ${notes.length ? `<div class="section-title">跨展览洞察</div>
-    <div class="insight-note"><h4><span class="dot"></span>你的兴趣谱系</h4>${notes.map(n => `<p>· ${n}</p>`).join("")}</div>` : ""}
+    ${notes.length ? `<div class="label-row"><span class="sec-label">跨收藏集洞察</span></div>
+    <div class="insight-note">${notes.map(n => `<p>· ${n}</p>`).join("")}</div>` : ""}
 
-    ${tagTop.length ? `<div class="section-title">高频标签</div><div class="card hbar-list">${bars(tagTop)}</div>` : ""}
-    ${catTop.length ? `<div class="section-title">媒介与类别分布</div><div class="card hbar-list">${bars(catTop, "alt")}</div>` : ""}
-    ${eraTop.length ? `<div class="section-title">年代分布</div><div class="card hbar-list">${bars(eraTop, "gold")}</div>` : ""}
-    ${artTop.length ? `<div class="section-title">常相遇的创作者</div><div class="card rank-list">
-      ${artTop.map(([a, n], i) => `<div class="rank"><span class="n ${i === 0 ? "top" : ""}">${i + 1}</span><b>${esc(a)}</b><span>${n} 件</span></div>`).join("")}
+    ${tagTop.length ? `<div class="label-row"><span class="sec-label">高频标签</span></div><div class="panel">${bars(tagTop)}</div>` : ""}
+    ${catTop.length ? `<div class="label-row"><span class="sec-label">媒介与类别</span></div><div class="panel">${bars(catTop)}</div>` : ""}
+    ${eraTop.length ? `<div class="label-row"><span class="sec-label">年代分布</span></div><div class="panel">${bars(eraTop)}</div>` : ""}
+    ${artTop.length ? `<div class="label-row"><span class="sec-label">常相遇的创作者</span></div><div class="panel rank">
+      ${artTop.map(([a, n], i) => `<div class="rank-row"><span class="n ${i === 0 ? "top" : ""}">${i + 1}</span><b>${esc(a)}</b><span>${n} 件</span></div>`).join("")}
     </div>` : ""}
-    <div class="hint-box">兴趣线索完全由你自己的记录生成。<b>评价、感受和意义,始终由你表达和决定</b>——AI 只做整理建议。</div>
-    <div class="footer-cred">从看见,到记住,再到理解</div>
+    <div class="privacy-note">兴趣线索完全由你自己的记录生成。评价、感受和意义,始终由你表达和决定。</div>
+    <div class="footer-cred">From seeing, to remembering, to understanding</div>
   </div>`;
 }
 
@@ -250,51 +255,47 @@ function pageInsights() {
 function pageSettings() {
   const I = computeInsights();
   return `<div class="page">
-    <div class="seal-card">
-      <div class="logo">观</div>
-      <div><h2>再观</h2><p>观展后个人文化记忆系统 · v1.0</p></div>
+    <header class="masthead slim"><h1>设置</h1></header>
+    <div class="brand-card">
+      <div class="brand-mark">观</div>
+      <div><h2>再观</h2><p>观展后个人文化记忆系统 · v2.0</p></div>
     </div>
 
-    <div class="section-title">数据管理</div>
-    <div class="card list-card">
+    <div class="label-row"><span class="sec-label">数据</span></div>
+    <div class="panel list">
       <button class="list-row" onclick="App.exportData()">
-        <span class="ic" style="background:#eaf0f4;color:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span>
-        <span class="tx">导出全部数据<small>JSON 文件 · 含 ${S.books.length} 册记录 / ${I.items.length} 件展品</small></span><span class="arrow">›</span>
+        <span class="tx">导出全部数据<small>JSON · ${S.books.length} 册收藏集 / ${I.items.length} 件作品 / ${I.cropCount} 处细节</small></span><span class="arrow">→</span>
       </button>
       <button class="list-row" onclick="document.getElementById('import-file').click()">
-        <span class="ic" style="background:#f3ecdd;color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg></span>
-        <span class="tx">导入数据<small>从导出的 JSON 恢复</small></span><span class="arrow">›</span>
+        <span class="tx">导入数据<small>从导出的 JSON 恢复</small></span><span class="arrow">→</span>
       </button>
       <button class="list-row" onclick="App.reseed()">
-        <span class="ic" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
-        <span class="tx">恢复示例数据<small>用于体验完整功能</small></span><span class="arrow">›</span>
+        <span class="tx">恢复示例数据<small>用于体验完整功能</small></span><span class="arrow">→</span>
       </button>
       <button class="list-row" onclick="App.clearAll()">
-        <span class="ic" style="background:#f7e5e1;color:#9c3b2b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
-        <span class="tx" style="color:#9c3b2b">清空所有数据<small>删除本浏览器中的全部记录</small></span><span class="arrow">›</span>
+        <span class="tx danger">清空所有数据<small>删除本浏览器中的全部记录</small></span><span class="arrow">→</span>
       </button>
     </div>
     <input type="file" id="import-file" accept="application/json" class="hidden" onchange="App.importData(this)">
 
-    <div class="section-title">隐私与人机边界</div>
-    <div class="card about-text" style="padding:16px">
-      <p><b>数据归属:</b>所有照片、感受与记录仅存储于你的浏览器本地(localStorage),不经过任何服务器。你可以随时导出或彻底删除。</p>
-      <p><b>人机边界:</b>AI 仅提供有来源、可修正的整理建议(展品匹配、拍摄时间解析);评价、感受与意义,始终由你本人表达和决定。</p>
-      <p><b>公开与分享:</b>每张展品卡可单独设置是否愿意公开,默认为私密。</p>
+    <div class="label-row"><span class="sec-label">隐私与人机边界</span></div>
+    <div class="panel prose">
+      <p><b>数据归属</b> — 所有照片、细节裁剪、感受与记录仅存储于你的浏览器本地,不经过任何服务器。可随时导出或彻底删除。</p>
+      <p><b>人机边界</b> — AI 仅提供有来源、可修正的整理建议(展品匹配、拍摄时间解析);评价、感受与意义,始终由你本人表达和决定。</p>
+      <p><b>公开与分享</b> — 每件作品可单独设置是否愿意公开,默认为私密。</p>
     </div>
 
-    <div class="section-title">关于</div>
-    <div class="card about-text" style="padding:16px">
-      <p>「再观」面向"智艺未来:人工智能时代的艺术生产"论坛主题,探索 AI 如何连接博物馆馆藏知识与公众个体经验——让零散的观展照片,转化为可回顾、可理解、可持续积累的个人文化档案。</p>
-      <p style="color:var(--accent);font-weight:600">从看见,到记住,再到理解。</p>
-      <p style="font-size:11.5px;color:var(--ink-3)">源码与部署:<a href="${REPO_URL}" target="_blank" rel="noopener" style="color:var(--teal)">${REPO_URL.replace("https://", "")}</a><br>
-      在 iOS Safari 中可通过「分享 → 添加到主屏幕」像原生 App 一样使用。</p>
+    <div class="label-row"><span class="sec-label">关于</span></div>
+    <div class="panel prose">
+      <p>「再观」面向"智艺未来:人工智能时代的艺术生产"论坛主题,探索 AI 如何连接博物馆馆藏知识与公众个体经验。产品形态参考 Rijksmuseum Rijksstudio 的个人收藏集与细节裁剪理念。</p>
+      <p style="color:var(--ink)">From seeing, to remembering, to understanding.</p>
+      <p class="small">源码:<a href="${REPO_URL}" target="_blank" rel="noopener">github.com/KINGKAZMAX/zaiguan</a><br>在 iOS Safari 中通过「分享 → 添加到主屏幕」即可像原生 App 一样使用。</p>
     </div>
-    <div class="footer-cred">再观 Zaiguan · 让观看发生第二次</div>
+    <div class="footer-cred">再观 ZAIGUAN</div>
   </div>`;
 }
 
-/* ---------------- 底部弹层 ---------------- */
+/* ---------------- 弹层 ---------------- */
 const overlayRoot = document.getElementById("overlay-root");
 function openSheet(inner, opts = {}) {
   const ov = document.createElement("div");
@@ -312,88 +313,100 @@ function closeSheet(ov) {
 }
 function closeAllSheets() { [...overlayRoot.children].forEach(closeSheet); }
 
-function sheetShell(title, body, extraHead = "") {
+function sheetShell(title, body) {
   return `<div class="sheet-grab"><i></i></div>
     <div class="sheet-head">
       <button class="x" onclick="App.closeTop()">✕</button>
       <div class="t">${title}</div>
-      <div style="width:30px">${extraHead}</div>
+      <div style="width:30px"></div>
     </div>
     <div class="sheet-body">${body}</div>`;
 }
 
-/* ================= 记录册详情 ================= */
+/* ================= 收藏集详情(Rijksstudio Set) ================= */
 function sheetBook(bookId) {
   const b = findBook(bookId);
   if (!b) return;
   const confirmed = b.items.filter(i => i.status === "confirmed" || i.status === "modified").length;
-  const pct = b.items.length ? Math.round(confirmed / b.items.length * 100) : 0;
   const grid = b.items.map(it => {
     const name = it.knowledge.name || "未识别";
-    return `<div class="photo-cell" onclick="App.openItem('${b.id}','${it.id}')">
-      ${it.photo ? `<img src="${it.photo}" alt="">` : posterHTML(it.knowledge.name, it.knowledge.category)}
-      <span class="badge">${esc(name)} · ${STATUS[it.status].label}</span>
-    </div>`;
+    const img = it.photo ? `<img src="${it.photo}" alt="">` : posterHTML(name, it.knowledge.category);
+    return `<figure class="set-item" onclick="App.openItem('${b.id}','${it.id}')">
+      <div class="m-img">${img}
+        <button class="heart ${it.experience.favorite ? "on" : ""}" onclick="event.stopPropagation();App.toggleFav('${b.id}','${it.id}')">♥</button>
+      </div>
+      <figcaption><b>${esc(name)}</b><i class="st st-${it.status}">${STATUS[it.status].label}${it.crops.length ? " · " + it.crops.length + " 细节" : ""}</i></figcaption>
+    </figure>`;
   }).join("");
 
-  openSheet(sheetShell("观展记录册", `
-    <button class="btn btn-ghost btn-block" style="margin:2px 0 12px" onclick="App.closeTop()">‹ 返回记录库</button>
-    <div class="book-head">
+  openSheet(sheetShell("收藏集", `
+    <button class="btn btn-ghost btn-block back-btn" onclick="App.closeTop()">‹ 返回收藏集</button>
+    <div class="set-head">
       <h2>${esc(b.exhibition)}</h2>
-      <div class="meta">${esc(b.venue)} · ${fmtDate(b.visitDate)}</div>
-      <div class="book-stats">
-        <div><b>${b.items.length}</b><span>展品记录</span></div>
-        <div><b>${confirmed}</b><span>已确认</span></div>
-        <div><b>${pct}%</b><span>完成度</span></div>
-      </div>
+      <p class="meta">${esc(b.venue)}</p>
+      <p class="meta">${fmtDate(b.visitDate)} — ${b.items.length} 件作品 · ${confirmed} 件已确认 · ${b.items.reduce((n, i) => n + i.crops.length, 0)} 处细节</p>
     </div>
-    <div class="section-title">展品记录卡</div>
-    <div class="photo-grid">${grid}
-      <button class="add-photo" onclick="App.addBlankItem('${b.id}')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        添加展品
+    <div class="label-row"><span class="sec-label">作品</span></div>
+    <div class="masonry">${grid}
+      <button class="m-card add-work" onclick="App.addBlankItem('${b.id}')">
+        <div class="m-img"><span class="plus">＋</span></div>
+        <figcaption><b style="color:var(--ink-3)">添加展品</b><span>&nbsp;</span></figcaption>
       </button>
     </div>
-    <div class="hint-box">点按展品卡可补充<b>作品信息、感受、评分与标签</b>;没有照片也可以先记录感受。</div>
-    <div class="row-2" style="margin-top:6px">
+    <div class="row-2" style="margin-top:8px">
       <button class="btn btn-ghost btn-sm" onclick="App.exportBook('${b.id}')">导出本册</button>
-      <button class="btn btn-danger btn-sm" onclick="App.deleteBook('${b.id}')">删除记录册</button>
+      <button class="btn btn-outline-danger btn-sm" onclick="App.deleteBook('${b.id}')">删除收藏集</button>
     </div>
   `));
 }
 
-/* ================= 展品记录卡 ================= */
+/* ================= 作品详情(Rijksstudio Artwork) ================= */
 function sheetItem(bookId, itemId) {
   const b = findBook(bookId);
   const it = b && b.items.find(x => x.id === itemId);
   if (!it) return;
-  editTmp = { tags: [...(it.experience.tags || [])], rating: it.experience.rating, bookId, itemId };
+  editTmp = { tags: [...(it.experience.tags || [])], rating: it.experience.rating, bookId, itemId, cropping: false, cropRect: null };
   const k = it.knowledge, e = it.experience;
-  const stars = [1, 2, 3, 4, 5].map(n =>
-    `<button class="${n <= e.rating ? "on" : ""}" onclick="App.rate(${n})">★</button>`).join("");
 
-  openSheet(sheetShell("展品记录卡", `
-    <button class="btn btn-ghost btn-block" style="margin:2px 0 12px" onclick="App.closeTop()">‹ 返回</button>
-    <div class="item-hero" ${it.photo ? "" : `onclick="App.uploadPhoto('${bookId}','${itemId}')" title="点按上传照片"`}>
-      ${it.photo ? `<img src="${it.photo}" alt="">` : posterHTML(k.name || "未识别", k.category)}
-      ${it.photoTakenAt ? `<span class="exif">📷 ${esc(it.photoTakenAt)}</span>` : ""}
-      ${it.photo ? `<button class="rm" style="top:10px;right:10px;width:26px;height:26px;font-size:13px" onclick="event.stopPropagation();App.removePhoto('${bookId}','${itemId}')">✕</button>` : ""}
+  /* 拍摄时间 + 状态行 */
+  const kv = [
+    ["作者 / 时代", `${k.artist || "—"}${k.era ? " · " + k.era : ""}`],
+    ["媒介", k.medium || "—"],
+    ["类别", k.category || "—"],
+    ["馆藏来源", k.collection || "—"],
+    ["收藏集", `${b.venue} · ${b.exhibition}`],
+    ["参观 / 拍摄", `${fmtDate(b.visitDate)}${it.photoTakenAt ? " · 📷 " + it.photoTakenAt : ""}`],
+  ];
+  if (k.source) kv.push(["信息来源", k.source]);
+
+  const crops = (it.crops || []).map(c => `
+    <figure class="crop-card" onclick="App.viewCrop('${c.id}')">
+      <img src="${c.dataUrl}" alt="">
+      ${c.note ? `<figcaption>${esc(c.note)}</figcaption>` : ""}
+    </figure>`).join("");
+
+  openSheet(sheetShell("作品", `
+    <button class="btn btn-ghost btn-block back-btn" onclick="App.closeTop()">‹ 返回</button>
+    <div class="art-stage" id="art-stage">${itemHeroHtml(it, bookId, itemId)}</div>
+
+    <div class="art-title">
+      <h2>${esc(k.name || "未识别展品")}</h2>
+      <p>${esc(k.artist || "")}${k.era ? " · " + esc(k.era) : ""}${k.medium ? " · " + esc(k.medium) : ""}</p>
+      <div class="art-badges">
+        <span class="st st-${it.status}">${STATUS[it.status].label} — ${STATUS[it.status].desc}</span>
+      </div>
+      <div class="art-actions">
+        <button class="btn btn-primary btn-sm" ${it.photo ? "" : "disabled"} onclick="App.startCrop()">${it.photo ? "✂ 裁剪细节" : "✂ 裁剪细节(需照片)"}</button>
+        <button class="btn ${e.favorite ? "btn-heart-on" : "btn-outline"} btn-sm" onclick="App.toggleFav('${bookId}','${it.id}',true)">♥ ${e.favorite ? "已是最爱" : "设为最爱"}</button>
+      </div>
     </div>
-    ${it.photo ? "" : `<div style="text-align:center;margin-top:-8px;margin-bottom:10px"><button class="btn btn-secondary btn-sm" onclick="App.uploadPhoto('${bookId}','${itemId}')">为这张卡上传照片</button></div>`}
 
-    <div class="card kv-list">
-      <div class="kv"><span class="k">观展语境</span><span class="v">${esc(b.venue)} · ${esc(b.exhibition)} · ${fmtDate(b.visitDate)}</span></div>
-      <div class="kv"><span class="k">拍摄时间</span><span class="v ${it.photoTakenAt ? "" : "empty-v"}">${it.photoTakenAt ? "📷 " + esc(it.photoTakenAt) : "未从照片中读取到"}</span></div>
+    <div class="label-row"><span class="sec-label">细节 · Details</span><span class="sec-count">${(it.crops || []).length}</span></div>
+    <div class="crops-strip">${crops}
+      ${it.photo ? `<button class="crop-card add" onclick="App.startCrop()"><span class="plus">＋</span><figcaption>裁剪新细节</figcaption></button>` : `<p class="small" style="grid-column:1/-1">为此卡上传照片后,即可像 Rijksstudio 一样裁取并保存打动你的局部。</p>`}
     </div>
 
-    <div class="section-title">匹配状态</div>
-    <div class="card status-picker">
-      ${Object.entries(STATUS).map(([key, st]) =>
-        `<button class="${it.status === key ? "on" : ""}" onclick="App.setStatus('${key}')">${st.label}</button>`).join("")}
-      <div style="width:100%;font-size:11px;color:var(--ink-3);margin-top:6px">${STATUS[it.status].desc}</div>
-    </div>
-
-    <div class="section-title">展品知识<span style="font-weight:400;color:var(--ink-3)">可修正 · AI 建议仅供参考</span></div>
+    <div class="label-row"><span class="sec-label">作品信息 · 可修正</span></div>
     <div class="field"><label>作品名称</label><input class="input" id="it-name" value="${esc(k.name)}" placeholder="例如:千里江山图"></div>
     <div class="row-2">
       <div class="field"><label>作者 / 时代</label><input class="input" id="it-artist" value="${esc(k.artist)}" placeholder="王希孟"></div>
@@ -405,15 +418,13 @@ function sheetItem(bookId, itemId) {
         <select class="select" id="it-cat">${CATEGORIES.map(c => `<option ${k.category === c ? "selected" : ""}>${c}</option>`).join("")}</select>
       </div>
     </div>
-    <div class="field"><label>馆藏来源</label><input class="input" id="it-col" value="${esc(k.collection)}" placeholder="故宫博物院">
-      ${k.source ? `<small style="font-size:11px;color:var(--ink-3);display:block;margin-top:5px">信息来源:${esc(k.source)}</small>` : ""}
-    </div>
+    <div class="field"><label>馆藏来源</label><input class="input" id="it-col" value="${esc(k.collection)}" placeholder="故宫博物院"></div>
 
-    <div class="section-title">个人经验</div>
+    <div class="label-row"><span class="sec-label">我的观看经验</span></div>
     <div class="field"><label>感受</label><textarea class="textarea" id="it-feeling" placeholder="它为什么让你停下来?此刻的记忆、联想与疑问都值得留下…">${esc(e.feeling)}</textarea></div>
-    <div class="field"><label>评价</label><div class="stars" id="stars">${stars}</div></div>
+    <div class="field"><label>评价</label><div class="stars" id="stars">${[1,2,3,4,5].map(n => `<button class="${n <= e.rating ? "on" : ""}" onclick="App.rate(${n})">★</button>`).join("")}</div></div>
     <div class="field"><label>留下的问题</label><input class="input" id="it-question" value="${esc(e.question)}" placeholder="待解答的疑惑,日后回看时可补"></div>
-    <div class="field"><label>自定义标签</label>
+    <div class="field"><label>标签</label>
       <div class="tags" id="tags">${editTmp.tags.map(t => tagChipHtml(t)).join("")}
         <button class="tag-add" onclick="App.addTag()">＋ 标签</button>
       </div>
@@ -422,14 +433,155 @@ function sheetItem(bookId, itemId) {
       <div class="lab"><b>愿意公开</b><span>仅影响未来分享功能,当前数据不会离开你的设备</span></div>
       <label class="switch"><input type="checkbox" id="it-public" ${e.isPublic ? "checked" : ""}><span class="track"></span></label>
     </div>
+    <div class="status-picker">
+      ${Object.entries(STATUS).map(([key, st]) => `<button class="${it.status === key ? "on" : ""}" onclick="App.setStatus('${key}')">${st.label}</button>`).join("")}
+    </div>
 
-    <button class="btn btn-primary btn-block" onclick="App.saveItem()">保存这张展品卡</button>
-    <button class="btn btn-danger btn-block" style="margin-top:10px" onclick="App.deleteItem('${bookId}','${itemId}')">删除展品卡</button>
+    <button class="btn btn-primary btn-block" onclick="App.saveItem()">保存作品卡</button>
+    <button class="btn btn-outline-danger btn-block" style="margin-top:10px" onclick="App.deleteItem('${bookId}','${itemId}')">删除作品卡</button>
   `), { backdropClose: false });
+}
+
+function itemHeroHtml(it, bookId, itemId) {
+  if (editTmp.cropping) {
+    return `<div class="crop-stage" id="crop-stage"
+        onpointerdown="App.cropDown(event)" onpointermove="App.cropMove(event)" onpointerup="App.cropUp(event)">
+      <img id="crop-img" src="${it.photo}" alt="" draggable="false">
+      <div class="crop-box" id="crop-box"></div>
+      <div class="crop-hint" id="crop-hint">在照片上拖动,框选你想留住的细节</div>
+    </div>
+    <div class="crop-bar">
+      <button class="btn btn-ghost btn-sm" onclick="App.cancelCrop()">取消</button>
+      <button class="btn btn-primary btn-sm" id="crop-save" disabled onclick="App.saveCrop('${bookId}','${itemId}')">保存细节</button>
+    </div>`;
+  }
+  const hero = it.photo
+    ? `<img src="${it.photo}" alt="">`
+    : posterHTML(it.knowledge.name || "未识别", it.knowledge.category);
+  return `${hero}
+    ${it.photoTakenAt ? `<span class="exif">📷 ${esc(it.photoTakenAt)}</span>` : ""}
+    ${it.photo ? `<button class="hero-x" onclick="App.removePhoto('${bookId}','${itemId}')">✕</button>` : ""}
+    ${it.photo ? "" : `<div class="hero-upload"><button class="btn btn-outline btn-sm" onclick="App.uploadPhoto('${bookId}','${itemId}')">为此卡上传照片</button></div>`}`;
 }
 const tagChipHtml = t => `<span class="tag" onclick="App.removeTag('${esc(t)}')">${esc(t)}<span class="x">✕</span></span>`;
 
-/* ================= 新建观展记录(四步流程) ================= */
+/* ---------------- 裁剪细节(Rijksstudio Crop) ---------------- */
+function startCrop() {
+  const it = currentItem();
+  if (!it || !it.photo) { toast("此卡还没有照片,请先上传"); return; }
+  editTmp.cropping = true; editTmp.cropRect = null;
+  const stage = document.getElementById("art-stage");
+  if (stage) stage.innerHTML = itemHeroHtml(it, editTmp.bookId, editTmp.itemId);
+}
+function cancelCrop() {
+  editTmp.cropping = false; editTmp.cropRect = null;
+  const it = currentItem();
+  const stage = document.getElementById("art-stage");
+  if (stage && it) stage.innerHTML = itemHeroHtml(it, editTmp.bookId, editTmp.itemId);
+}
+function cropDown(ev) {
+  const stage = document.getElementById("crop-stage");
+  if (!stage) return;
+  stage.setPointerCapture(ev.pointerId);
+  const r = stage.getBoundingClientRect();
+  editTmp.cropStart = { x: clamp(ev.clientX - r.left, 0, r.width), y: clamp(ev.clientY - r.top, 0, r.height) };
+  editTmp.cropRect = { x: editTmp.cropStart.x, y: editTmp.cropStart.y, w: 0, h: 0 };
+  drawCropBox(r);
+  const hint = document.getElementById("crop-hint");
+  if (hint) hint.style.display = "none";
+}
+function cropMove(ev) {
+  if (!editTmp.cropRect || !editTmp.cropStart) return;
+  const stage = document.getElementById("crop-stage");
+  const r = stage.getBoundingClientRect();
+  const x2 = clamp(ev.clientX - r.left, 0, r.width);
+  const y2 = clamp(ev.clientY - r.top, 0, r.height);
+  editTmp.cropRect = {
+    x: Math.min(editTmp.cropStart.x, x2), y: Math.min(editTmp.cropStart.y, y2),
+    w: Math.abs(x2 - editTmp.cropStart.x), h: Math.abs(y2 - editTmp.cropStart.y),
+  };
+  drawCropBox(r);
+}
+function cropUp() {
+  const r = editTmp.cropRect;
+  const btn = document.getElementById("crop-save");
+  if (btn) btn.disabled = !(r && r.w > 18 && r.h > 18);
+  editTmp.cropStart = null;
+}
+function drawCropBox() {
+  const box = document.getElementById("crop-box");
+  const r = editTmp.cropRect;
+  if (box && r) {
+    box.style.display = "block";
+    box.style.left = r.x + "px"; box.style.top = r.y + "px";
+    box.style.width = r.w + "px"; box.style.height = r.h + "px";
+  }
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+function saveCrop(bookId, itemId) {
+  const it = currentItem();
+  const stageRect = document.getElementById("crop-stage").getBoundingClientRect();
+  const r = editTmp.cropRect;
+  if (!it || !r || r.w < 10 || r.h < 10) { toast("请先拖动框选一个区域"); return; }
+  const img = new Image();
+  img.onload = () => {
+    const scale = img.naturalWidth / stageRect.width;
+    const sx = r.x * scale, sy = r.y * scale, sw = r.w * scale, sh = r.h * scale;
+    const out = document.createElement("canvas");
+    const oscale = Math.min(1, 900 / Math.max(sw, sh));
+    out.width = Math.round(sw * oscale); out.height = Math.round(sh * oscale);
+    out.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, out.width, out.height);
+    const note = prompt("为这个细节写一句话(可留空)", "") || "";
+    it.crops.push({ id: uid(), dataUrl: out.toDataURL("image/jpeg", 0.85), note: note.trim() });
+    save();
+    toast("✓ 细节已保存");
+    editTmp.cropping = false; editTmp.cropRect = null;
+    closeAllSheets();
+    sheetItem(bookId, itemId);
+  };
+  img.onerror = () => toast("⚠️ 照片读取失败");
+  img.src = it.photo;
+}
+function viewCrop(cropId) {
+  const it = currentItem();
+  const c = it && it.crops.find(x => x.id === cropId);
+  if (!c) return;
+  const ov = document.createElement("div");
+  ov.className = "overlay crop-view";
+  ov.innerHTML = `<div class="crop-view-box">
+    <img src="${c.dataUrl}" alt="">
+    ${c.note ? `<p>${esc(c.note)}</p>` : ""}
+    <div class="cb-actions">
+      <button data-a="close">关闭</button>
+      <button data-a="note">写一句注</button>
+      <button data-a="del" class="danger">删除</button>
+    </div>
+  </div>`;
+  ov.addEventListener("click", e => {
+    if (e.target === ov) { ov.remove(); return; }
+    const b = e.target.closest("button[data-a]");
+    if (!b) return;
+    const a = b.dataset.a;
+    ov.remove();
+    if (a === "note") {
+      const note = prompt("为这个细节写一句话", c.note || "") || "";
+      c.note = note.trim(); save();
+      closeAllSheets(); sheetItem(editTmp.bookId, editTmp.itemId);
+    } else if (a === "del") {
+      it.crops = it.crops.filter(x => x.id !== cropId); save();
+      toast("已删除细节");
+      closeAllSheets(); sheetItem(editTmp.bookId, editTmp.itemId);
+    }
+  });
+  overlayRoot.appendChild(ov);
+}
+function currentItem() {
+  const b = findBook(editTmp.bookId);
+  return b && b.items.find(x => x.id === editTmp.itemId);
+}
+
+/* ================= 新建收藏集(四步) ================= */
 let draft = null;
 function openCreate() {
   draft = { step: 1, venue: "", exhibition: "", date: todayStr(), photos: [], results: null, scanDone: false };
@@ -457,14 +609,8 @@ function renderCreateSheet(extra) {
     body = `
       <div class="hint-box">第 2 步 · 从相册选取本次拍摄的展品照片(系统将读取<b>可用的拍摄时间</b>)。</div>
       <div class="photo-grid">${cells}
-        <button class="add-photo" onclick="document.getElementById('cr-photos').click()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          添加照片
-        </button>
-        <button class="add-photo" onclick="App.addDraftBlank()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          空白展品卡
-        </button>
+        <button class="add-photo" onclick="document.getElementById('cr-photos').click()">添加照片</button>
+        <button class="add-photo" onclick="App.addDraftBlank()">空白展品卡</button>
       </div>
       <input type="file" id="cr-photos" accept="image/*" multiple class="hidden" onchange="App.addDraftPhotos(this)">
       <button class="btn btn-primary btn-block" style="margin-top:16px" ${draft.photos.length ? "" : "disabled"} onclick="App.createStep2()">${draft.photos.length ? `开始识别 ${draft.photos.length} 张照片的线索` : "请先添加照片"}</button>`;
@@ -481,18 +627,18 @@ function renderCreateSheet(extra) {
     const unrec = draft.results.filter(r => !r.suggestion).length;
     const t0 = draft.photos.map(p => p.takenAt).filter(Boolean).sort()[0];
     body = `
-      <div class="hint-box">第 4 步 · 即将生成观展记录册</div>
-      <div class="card kv-list">
+      <div class="hint-box">第 4 步 · 即将生成收藏集</div>
+      <div class="panel kv-list">
         <div class="kv"><span class="k">展览</span><span class="v">${esc(draft.venue)} · ${esc(draft.exhibition)}</span></div>
         <div class="kv"><span class="k">日期</span><span class="v">${draft.date}</span></div>
-        <div class="kv"><span class="k">展品</span><span class="v">${draft.photos.length} 张记录卡(${sug} 个识别建议,${unrec} 张未识别)</span></div>
-        <div class="kv"><span class="k">已确认</span><span class="v">${ok} 张</span></div>
+        <div class="kv"><span class="k">作品</span><span class="v">${draft.photos.length} 件(${sug} 个识别建议,${unrec} 件未识别)</span></div>
+        <div class="kv"><span class="k">已确认</span><span class="v">${ok} 件</span></div>
         ${t0 ? `<div class="kv"><span class="k">最早拍摄</span><span class="v">📷 ${t0}</span></div>` : ""}
       </div>
-      <button class="btn btn-primary btn-block" onclick="App.finishCreate()">生成记录册</button>
-      <p style="font-size:11.5px;color:var(--ink-3);text-align:center;margin-top:12px">识别建议仅供参考,生成后你仍可逐张确认、修改或补充。</p>`;
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="App.finishCreate()">生成收藏集</button>
+      <p class="small" style="text-align:center;margin-top:12px;color:var(--ink-3)">识别建议仅供参考,生成后你仍可逐张确认、修改、裁剪细节。</p>`;
   }
-  openSheet(sheetShell("新建观展记录", steps + (body || "")), { backdropClose: false });
+  openSheet(sheetShell("新建收藏集", steps + (body || "")), { backdropClose: false });
   if (draft && draft.step === 3 && draft.scanDone) renderResults();
 }
 
@@ -550,9 +696,7 @@ async function runScan() {
 
 function renderResults() {
   const cards = draft.results.map((r, idx) => {
-    const thumb = r.photo.dataUrl
-      ? `<img src="${r.photo.dataUrl}" alt="">`
-      : posterHTML("空白", "其他", true);
+    const thumb = r.photo.dataUrl ? `<img src="${r.photo.dataUrl}" alt="">` : posterHTML("空白", "其他", true);
     let main;
     if (r.photo.blank) {
       main = `<b>空白展品卡</b><span>无照片 · 待你手动补充作品信息</span>`;
@@ -564,12 +708,12 @@ function renderResults() {
     } else {
       main = `<b>未识别</b><span>暂未匹配到馆藏信息</span><span style="color:var(--ink-3)">可先保留观看感受,日后再补充</span>`;
     }
-    const actions = r.photo.blank ? `<span class="chip st-pending">待补充</span>` :
+    const actions = r.photo.blank ? `<span class="st st-pending">待补充</span>` :
       r.suggestion ? `
-      <button class="btn ${r.decision === "accept" ? "btn-primary" : "btn-secondary"}" onclick="App.decide(${idx},'accept')">${r.decision === "accept" ? "✓ 已确认" : "确认"}</button>
-      <button class="btn ${r.decision === "later" ? "btn-ghost" : "btn-ghost"}" style="opacity:${r.decision === "later" ? 1 : .6}" onclick="App.decide(${idx},'later')">稍后</button>` :
-      `<span class="chip st-unrecognized">未识别</span>`;
-    return `<div class="card rec-card">
+      <button class="btn ${r.decision === "accept" ? "btn-primary" : "btn-outline"} btn-sm" onclick="App.decide(${idx},'accept')">${r.decision === "accept" ? "✓ 已确认" : "确认"}</button>
+      <button class="btn btn-ghost btn-sm" style="opacity:${r.decision === "later" ? 1 : .55}" onclick="App.decide(${idx},'later')">稍后</button>` :
+      `<span class="st st-unrecognized">未识别</span>`;
+    return `<div class="panel rec-card">
       <div class="rec-thumb">${thumb}</div>
       <div class="rec-body">${main}</div>
       <div class="rec-actions">${actions}</div>
@@ -578,7 +722,7 @@ function renderResults() {
   document.getElementById("scan-area").innerHTML = `
     <div class="hint-box">第 3 步 · 识别线索(模拟多模态识别 + 馆藏匹配):<b>AI 建议仅供参考</b>,最终由你确认。</div>
     ${cards}
-    <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="App.createStep3()">下一步 · 生成记录册</button>`;
+    <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="App.createStep3()">下一步 · 生成收藏集</button>`;
 }
 const decide = (i, d) => { draft.results[i].decision = d; renderResults(); };
 const createStep3 = () => { draft.step = 4; renderCreateSheet(); };
@@ -602,7 +746,8 @@ function finishCreate() {
         category: sug.category, collection: sug.collection,
         source: `馆藏数据匹配 · 置信度 ${r.confidence}%`, sourceType: "museum",
       } : { name: "", artist: "", era: "", medium: "", category: "其他", collection: "", source: "", sourceType: "none" },
-      experience: { feeling: "", rating: 0, question: "", tags: [], isPublic: false },
+      experience: { feeling: "", rating: 0, question: "", tags: [], isPublic: false, favorite: false },
+      crops: [],
       status,
     });
   }
@@ -611,13 +756,25 @@ function finishCreate() {
   draft = null;
   closeAllSheets();
   ui.tab = "records"; render();
-  toast("✓ 记录册已生成,去补充感受吧");
-  openSheetBook(book.id);
+  toast("✓ 收藏集已生成,去补充感受与细节吧");
+  sheetBook(book.id);
 }
-const openSheetBook = id => sheetBook(id);
 
-/* ---------------- 展品卡操作 ---------------- */
-function setStatus(st) { editTmp.pendingStatus = st; document.querySelectorAll(".status-picker button").forEach(b => b.classList.toggle("on", b.textContent === STATUS[st].label)); }
+/* ---------------- 作品卡操作 ---------------- */
+function toggleFav(bookId, itemId, reopen) {
+  const it = findBook(bookId).items.find(x => x.id === itemId);
+  it.experience.favorite = !it.experience.favorite;
+  save();
+  if (reopen) { closeAllSheets(); sheetItem(bookId, itemId); }
+  else render(false);
+  toast(it.experience.favorite ? "♥ 已设为最爱" : "已取消最爱");
+}
+const toggleFavFilter = () => { ui.archive.fav = !ui.archive.fav; render(false); };
+
+function setStatus(st) {
+  editTmp.pendingStatus = st;
+  document.querySelectorAll(".status-picker button").forEach(b => b.classList.toggle("on", b.textContent.startsWith(STATUS[st].label)));
+}
 function rate(n) {
   editTmp.rating = n;
   const box = document.getElementById("stars");
@@ -634,6 +791,7 @@ function removeTag(t) {
   editTmp.tags = editTmp.tags.filter(x => x !== t);
   document.getElementById("tags").innerHTML = editTmp.tags.map(tagChipHtml).join("") + `<button class="tag-add" onclick="App.addTag()">＋ 标签</button>`;
 }
+const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
 function saveItem() {
   const b = findBook(editTmp.bookId);
   const it = b && b.items.find(x => x.id === editTmp.itemId);
@@ -651,16 +809,8 @@ function saveItem() {
   if (it.knowledge.sourceType === "museum" && before !== after) it.knowledge.source = "用户修正 · 原建议来自馆藏数据匹配";
   save();
   toast("✓ 已保存");
-  closeSheet();
-  refreshUnderSheets(b.id, it.id);
-}
-const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
-
-function refreshUnderSheets(bookId, itemId) {
-  /* 关闭后刷新底下的记录册弹层 */
-  const hadBook = [...overlayRoot.querySelectorAll(".sheet")].length;
   closeAllSheets();
-  if (hadBook && findBook(bookId)) sheetBook(bookId);
+  if (findBook(b.id)) sheetBook(b.id);
   render(false);
 }
 
@@ -668,16 +818,16 @@ function addBlankItem(bookId) {
   const b = findBook(bookId);
   if (!b) return;
   const it = {
-    id: uid(), photo: null, photoTakenAt: null,
+    id: uid(), photo: null, photoTakenAt: null, crops: [],
     knowledge: { name: "", artist: "", era: "", medium: "", category: "其他", collection: "", source: "", sourceType: "none" },
-    experience: { feeling: "", rating: 0, question: "", tags: [], isPublic: false },
+    experience: { feeling: "", rating: 0, question: "", tags: [], isPublic: false, favorite: false },
     status: "pending",
   };
   b.items.push(it);
   save();
   closeAllSheets();
   sheetBook(bookId);
-  setTimeout(() => openItem(bookId, it.id), 60);
+  setTimeout(() => { closeAllSheets(); sheetItem(bookId, it.id); }, 60);
 }
 function uploadPhoto(bookId, itemId) {
   const inp = document.createElement("input");
@@ -688,25 +838,23 @@ function uploadPhoto(bookId, itemId) {
     const it = findBook(bookId).items.find(x => x.id === itemId);
     it.photo = dataUrl;
     it.photoTakenAt = parseExifDate(rawBuf);
-    save(); toast("✓ 照片已添加");
-    closeAllSheets(); sheetBook(bookId);
-    setTimeout(() => openItem(bookId, itemId), 60);
+    save(); toast("✓ 照片已添加,现在可以裁剪细节了");
+    closeAllSheets(); sheetItem(bookId, itemId);
   };
   inp.click();
 }
 function removePhoto(bookId, itemId) {
-  confirmBox("移除照片", "只移除照片,展品卡与感受会保留(显示为占位图)。", [
+  confirmBox("移除照片", "只移除照片,作品卡、细节与感受会保留。", [
     { label: "取消" },
     { label: "移除", danger: true, fn: () => {
       const it = findBook(bookId).items.find(x => x.id === itemId);
       it.photo = null; save();
-      closeAllSheets(); sheetBook(bookId);
-      setTimeout(() => openItem(bookId, itemId), 60);
+      closeAllSheets(); sheetItem(bookId, itemId);
     } },
   ]);
 }
 function deleteItem(bookId, itemId) {
-  confirmBox("删除展品卡", "这张展品卡及其感受记录将被删除,无法恢复。", [
+  confirmBox("删除作品卡", "这张作品卡及其细节裁剪、感受记录将被删除,无法恢复。", [
     { label: "取消" },
     { label: "删除", danger: true, fn: () => {
       const b = findBook(bookId);
@@ -717,7 +865,7 @@ function deleteItem(bookId, itemId) {
 }
 function deleteBook(bookId) {
   const b = findBook(bookId);
-  confirmBox("删除记录册", `「${b.exhibition}」及其中 ${b.items.length} 张展品卡将被删除。建议先导出备份。`, [
+  confirmBox("删除收藏集", `「${b.exhibition}」及其中 ${b.items.length} 件作品将被删除。建议先导出备份。`, [
     { label: "取消" },
     { label: "删除", danger: true, fn: () => {
       S.books = S.books.filter(x => x.id !== bookId);
@@ -726,7 +874,7 @@ function deleteBook(bookId) {
   ]);
 }
 
-/* ---------------- 数据导入导出 ---------------- */
+/* ---------------- 导入导出 ---------------- */
 function downloadJSON(obj, filename) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
@@ -735,8 +883,8 @@ function downloadJSON(obj, filename) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
-const exportData = () => { downloadJSON({ app: "zaiguan", version: 1, exportedAt: new Date().toISOString(), books: S.books }, `zaiguan-${todayStr()}.json`); toast("✓ 已导出全部数据"); };
-const exportBook = id => { const b = findBook(id); downloadJSON({ app: "zaiguan", version: 1, book: b }, `zaiguan-${b.exhibition}-${todayStr()}.json`); toast("✓ 已导出本册"); };
+const exportData = () => { downloadJSON({ app: "zaiguan", version: 2, exportedAt: new Date().toISOString(), books: S.books }, `zaiguan-${todayStr()}.json`); toast("✓ 已导出全部数据"); };
+const exportBook = id => { const b = findBook(id); downloadJSON({ app: "zaiguan", version: 2, book: b }, `zaiguan-${b.exhibition}-${todayStr()}.json`); toast("✓ 已导出本册"); };
 
 function importData(input) {
   const f = input.files[0];
@@ -748,10 +896,11 @@ function importData(input) {
       const data = JSON.parse(reader.result);
       const books = Array.isArray(data) ? data : data.books || (data.book ? [data.book] : null);
       if (!books) throw new Error();
-      confirmBox("导入数据", `将导入 ${books.length} 册记录,并<b>覆盖</b>当前全部数据。`, [
+      confirmBox("导入数据", `将导入 ${books.length} 册收藏集,并<b>覆盖</b>当前全部数据。`, [
         { label: "取消" },
         { label: "导入", fn: () => {
-          S.books = books.filter(b => b && b.id && Array.isArray(b.items));
+          S = { books: books.filter(b => b && b.id && Array.isArray(b.items)), v: 2 };
+          normalize(S);
           save(); render(); toast("✓ 导入完成");
         } },
       ]);
@@ -760,15 +909,15 @@ function importData(input) {
   reader.readAsText(f);
 }
 function reseed() {
-  confirmBox("恢复示例数据", "将用 3 册示例记录覆盖当前数据。", [
+  confirmBox("恢复示例数据", "将用 3 册示例收藏集覆盖当前数据。", [
     { label: "取消" },
-    { label: "恢复", fn: () => { S.books = seedBooks(); save(); render(); toast("✓ 已恢复示例数据"); } },
+    { label: "恢复", fn: () => { S = { books: seedBooks(), v: 2 }; save(); render(); toast("✓ 已恢复示例数据"); } },
   ]);
 }
 function clearAll() {
-  confirmBox("清空所有数据", "本浏览器中的全部观展记录、照片与感受将被彻底删除。", [
+  confirmBox("清空所有数据", "本浏览器中的全部收藏集、照片、细节与感受将被彻底删除。", [
     { label: "取消" },
-    { label: "全部删除", danger: true, fn: () => { S.books = []; save(); render(); toast("已清空"); } },
+    { label: "全部删除", danger: true, fn: () => { S = { books: [], v: 2 }; save(); render(); toast("已清空"); } },
   ]);
 }
 
@@ -799,17 +948,19 @@ function confirmBox(title, msg, buttons) {
   overlayRoot.appendChild(ov);
 }
 
-/* ---------------- 对外 API(inline onclick) ---------------- */
+/* ---------------- 对外 API ---------------- */
 window.App = {
   closeTop: () => closeSheet(),
-  openCreate, openBook: sheetBook, openItem: (b, i) => { closeAllSheets(); sheetBook(b); setTimeout(() => openItemSheet(b, i), 40); },
-  setFilter: (k, v) => { ui.archive[k] = v; render(false); },
+  openCreate, openBook: sheetBook,
+  openItem: (b, i) => { closeAllSheets(); sheetBook(b); setTimeout(() => sheetItem(b, i), 40); },
+  setFilter: (k, v) => { ui.archive[k] = v; if (k === "cat") ui.archive.fav = false; render(false); },
+  toggleFavFilter, toggleFav,
   addBlankItem, uploadPhoto, removePhoto, deleteItem, deleteBook,
   setStatus, rate, addTag, removeTag, saveItem,
+  startCrop, cancelCrop, cropDown, cropMove, cropUp, saveCrop, viewCrop,
   createStep1, addDraftPhotos, addDraftBlank, removeDraftPhoto, createStep2, decide, createStep3, finishCreate,
   exportData, exportBook, importData, reseed, clearAll,
 };
-const openItemSheet = (b, i) => sheetItem(b, i);
 
 /* ---------------- 启动 ---------------- */
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { ui.tab = t.dataset.tab; render(); }));

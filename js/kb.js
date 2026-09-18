@@ -154,29 +154,81 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&a
 const fmtDate = d => (d || "").trim() || "";
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
+/* ---------- 程序化展品图(画布版:可生成真实 dataURL,支持裁剪细节) ---------- */
+function posterCanvas(name, category, size = 480) {
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = size;
+  const ctx = cv.getContext("2d");
+  const pal = CAT_PALETTE[category] || CAT_PALETTE["其他"];
+  const g = ctx.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+  const r = ctx.createRadialGradient(size * 0.32, size * 0.26, 0, size * 0.32, size * 0.26, size * 0.85);
+  r.addColorStop(0, "rgba(255,250,238,0.22)"); r.addColorStop(1, "rgba(255,250,238,0)");
+  ctx.fillStyle = r; ctx.fillRect(0, 0, size, size);
+  const rand = mulberry32(hashStr(name || "x"));
+  ctx.strokeStyle = "rgba(248,239,221,0.22)"; ctx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    ctx.arc(size * (0.15 + rand() * 0.7), size * (0.15 + rand() * 0.7), size * (0.1 + rand() * 0.32), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(248,239,221,0.34)";
+  ctx.strokeRect(13.5, 13.5, size - 27, size - 27);
+  const chars = [...(name || "?").replace(/[()《》·\s]/g, "")].slice(0, 2);
+  ctx.fillStyle = "rgba(248,239,221,0.95)";
+  ctx.font = `700 ${Math.round(size * 0.28)}px "Songti SC","STSong","Noto Serif SC",serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (chars.length > 1) {
+    ctx.fillText(chars[0], size * 0.37, size * 0.42);
+    ctx.fillText(chars[1], size * 0.63, size * 0.62);
+  } else {
+    ctx.fillText(chars[0] || "?", size / 2, size / 2);
+  }
+  return cv;
+}
+const posterDataUrl = (name, category, size = 480) => posterCanvas(name, category, size).toDataURL("image/jpeg", 0.9);
+/* 从画布图裁取细节区域 */
+function cropCanvasDataUrl(cv, x, y, w, h, maxDim = 800) {
+  const scale = Math.min(1, maxDim / Math.max(w, h));
+  const out = document.createElement("canvas");
+  out.width = Math.round(w * scale); out.height = Math.round(h * scale);
+  out.getContext("2d").drawImage(cv, x, y, w, h, 0, 0, out.width, out.height);
+  return out.toDataURL("image/jpeg", 0.85);
+}
+
 /* ---------- 示例数据(首次访问注入,可在设置中清除/恢复) ---------- */
 function seedBooks() {
   const mk = (venue, exhibition, visitDate, items) => ({
     id: uid(), venue, exhibition, visitDate, createdAt: visitDate, items,
   });
-  const item = (kb, status, exp, photoTakenAt, photoNull) => ({
-    id: uid(),
-    photo: photoNull ? null : null, /* 示例数据使用程序化占位图,不占用存储 */
-    photoTakenAt: photoTakenAt || null,
-    knowledge: {
-      name: kb.name, artist: kb.artist, era: kb.era, medium: kb.medium,
-      category: kb.category, collection: kb.collection,
-      source: "馆藏数据匹配(示例)", sourceType: "museum",
-    },
-    experience: Object.assign({ feeling: "", rating: 0, question: "", tags: [], isPublic: false }, exp),
-    status,
-  });
+  const item = (kb, status, exp, photoTakenAt, crops) => {
+    const cv = posterCanvas(kb.name, kb.category, 520);
+    return {
+      id: uid(),
+      photo: cv.toDataURL("image/jpeg", 0.88),
+      photoTakenAt: photoTakenAt || null,
+      knowledge: {
+        name: kb.name, artist: kb.artist, era: kb.era, medium: kb.medium,
+        category: kb.category, collection: kb.collection,
+        source: "馆藏数据匹配(示例)", sourceType: "museum",
+      },
+      experience: Object.assign({ feeling: "", rating: 0, question: "", tags: [], isPublic: false, favorite: false }, exp),
+      crops: (crops || []).map(c => ({
+        id: uid(),
+        dataUrl: cropCanvasDataUrl(cv, c[0] * 520, c[1] * 520, c[2] * 520, c[3] * 520),
+        note: c[4] || "",
+      })),
+      status,
+    };
+  };
   return [
     mk("故宫博物院", "千里江山——历代青绿山水画特展", "2026-08-12", [
       item(KB[0], "confirmed",
         { feeling: "在展厅里站了将近二十分钟。石青石绿层层叠开,近看只是笔触,退后一步才是山河。原来十八岁可以把千里画得这么从容。",
-          rating: 5, question: "卷尾的蔡京题跋为什么会保留下来?", tags: ["青绿山水", "色彩", "宋代"] },
-        "2026-08-12 10:24"),
+          rating: 5, question: "卷尾的蔡京题跋为什么会保留下来?", tags: ["青绿山水", "色彩", "宋代"], favorite: true },
+        "2026-08-12 10:24",
+        [[0.05, 0.05, 0.42, 0.42, "石青山头——最浓的一组青绿"], [0.5, 0.5, 0.4, 0.4, "局部笔触,近看只是点与线"]]),
       item(KB[4], "suggested",
         { feeling: "人太多,只能隔着人海看一眼衣袂飘带。但那种'翩若惊鸿'的动势,隔多远都能感觉到。",
           rating: 4, tags: ["摹本", "人物"] },
@@ -184,13 +236,15 @@ function seedBooks() {
       item(KB[2], "pending",
         { feeling: "宫女们的排列有一种节奏感,像乐句。想之后对照原作尺寸再看看禄东赞的袍子纹样。",
           rating: 4, tags: ["纹样", "唐代"] },
-        "2026-08-12 11:41"),
+        "2026-08-12 11:41",
+        [[0.3, 0.3, 0.35, 0.35, "人物排列的节奏感"]]),
     ]),
     mk("上海博物馆", "星耀中国——三星堆·金沙古蜀文明展", "2026-07-05", [
       item(KB[10], "confirmed",
         { feeling: "环绕大立人走了三圈。那双手握成中空的环,握着的东西永远不在了,反而比拿着任何东西都更有想象力。",
-          rating: 5, question: "大立人手中原本握的是什么?权杖?玉琮?还是象牙?", tags: ["青铜", "人像", "祭祀"] },
-        "2026-07-05 14:15"),
+          rating: 5, question: "大立人手中原本握的是什么?权杖?玉琮?还是象牙?", tags: ["青铜", "人像", "祭祀"], favorite: true },
+        "2026-07-05 14:15",
+        [[0.3, 0.05, 0.4, 0.4, "中空的手——握住的与缺席的"]]),
       item(KB[19], "modified",
         { feeling: "金箔薄得像呼吸。四只神鸟绕着十二道光芒转,三千年前的人对'循环'的理解竟然这么轻盈。",
           rating: 5, tags: ["金器", "纹样", "宇宙"] },
@@ -203,8 +257,9 @@ function seedBooks() {
     mk("中国美术馆", "光影印象——莫奈与印象派大师展", "2026-05-18", [
       item(KB[14], "confirmed",
         { feeling: "没有轮廓,只有水的呼吸。看久了会觉得画面在轻轻晃动——不是风,是光本身在动。",
-          rating: 5, tags: ["光影", "色彩", "风景"] },
-        "2026-05-18 10:36"),
+          rating: 5, tags: ["光影", "色彩", "风景"], favorite: true },
+        "2026-05-18 10:36",
+        [[0.1, 0.45, 0.45, 0.35, "水面:没有轮廓的笔触"], [0.5, 0.08, 0.4, 0.4, "光在颜料里的震动"]]),
       item(KB[15], "suggested",
         { feeling: "比想象中更厚重的颜料堆叠,花瓣几乎是雕出来的。标签说是复制期,但站在面前的冲击是真的。",
           rating: 4, tags: ["笔触", "色彩"] },
