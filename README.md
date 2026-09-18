@@ -45,7 +45,8 @@
 | 项 | 说明 |
 |---|---|
 | 架构 | 纯前端单页应用(SPA),无后端、无依赖、无构建 |
-| UI | iOS 风格(底部标签栏、底部弹层、毛玻璃、开关、分段筛选),宣纸底色 + 朱砂印章视觉 |
+| UI | 中国风重制版:宣纸底色 + 朱砂印章 + 霞鹜文楷竖排立轴 + 鱼尾/朱丝栏/界格古籍版式(详见 [DESIGN.md](DESIGN.md)) |
+| 字体 | 霞鹜文楷 LXGW WenKai(OFL 开源,jsDelivr 分包 CDN 按需加载,离线回退系统楷体) |
 | 存储 | localStorage + 照片 Canvas 压缩(最长边 1000px,JPEG 0.82) |
 | EXIF | 自实现的 JPEG APP1/TIFF IFD 解析器,读取 `DateTimeOriginal (0x9003)` |
 | 识别 | 确定性伪随机(mulberry32)模拟多模态识别,建议可复现 |
@@ -65,8 +66,9 @@ python3 -m http.server 8080
 
 ```
 zaiguan/
-├── index.html      # 入口与页面骨架
-├── style.css       # iOS 风格 UI 样式
+├── index.html      # 入口与页面骨架(含霞鹜文楷 CDN 引入)
+├── style.css       # 中国风 UI(宣纸/朱砂/鎏金/黛蓝 + 古籍版式)
+├── DESIGN.md       # 中国风设计手册与素材资源清单
 └── js/
     ├── kb.js       # 馆藏知识库 / 类别配色 / EXIF 解析 / 示例数据
     └── app.js      # 状态管理 / 四大页面 / 创建流程 / 档案 / 洞察 / 导入导出

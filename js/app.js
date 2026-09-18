@@ -49,8 +49,16 @@ function pageRecords() {
 
   let html = `<div class="page">
     <div class="hero">
-      <h1>再观</h1>
-      <p>让观看发生第二次</p>
+      <svg class="mtn" viewBox="0 0 420 110" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 110 L48 40 L86 74 L138 26 L188 82 L236 52 L286 92 L332 58 L378 88 L420 70 L420 110 Z" fill="#3a6273" opacity=".42"/>
+        <path d="M0 110 L64 66 L124 96 L192 54 L248 86 L312 66 L368 92 L420 76 L420 110 Z" fill="#28505e" opacity=".62"/>
+        <path d="M0 92 L72 82 L136 102 L216 80 L300 100 L372 90 L420 98 L420 110 L0 110 Z" fill="#1c3640" opacity=".92"/>
+      </svg>
+      <div class="hero-inner">
+        <span class="seal hero-seal">观</span>
+        <div class="vsub">让观看发生第二次</div>
+        <h1 class="vtitle">再观</h1>
+      </div>
       <div class="hero-flow">
         <span>上传照片</span><i>→</i><span>识别线索</span><i>→</i><span>记录感受</span><i>→</i><span>形成档案</span>
       </div>
