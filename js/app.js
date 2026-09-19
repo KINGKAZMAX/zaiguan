@@ -67,7 +67,7 @@ function workCard(w) {
     <img class="wcard__img" src="${workImage(w, 480)}" alt="${esc(w.name)}" loading="lazy" data-fb="${esc(w.id)}"
          width="${Math.round(480 * (w.ar >= 1 ? 1 : w.ar))}" height="${Math.round(480 / (w.ar >= 1 ? w.ar : 1))}">
     <div class="wcard__body">
-      <div class="wcard__name"><span class="wcard__hue" style="background:${hue.dot}"></span>${esc(w.name)}</div>
+      <div class="wcard__name">${esc(w.name)}</div>
       <div class="wcard__meta">${esc(w.artist)} · ${esc(w.era)}</div>
     </div>
   </a>`;
@@ -121,6 +121,7 @@ function setActiveNav(key) {
 
 function render() {
   const [root, a, b] = current.seg;
+  document.body.dataset.route = root || "home";
   closeModal();
   if (!root) return viewHome();
   if (root === "collection") return viewCollection();
