@@ -1,28 +1,29 @@
 /* ============================================================
-   再观 Rijksstudio v4 — 应用主体
-   路由 + 视图(首页/馆藏/作品/工作室/收藏集/创作/设置)
-   + 深度缩放查看器 + 裁剪细节 + 拼贴创作编辑器
+   再观 Arena v5 — 应用主体
+   Are.na 式个人知识档案:块(block)流 / 频道(channel)/ 连接(connect)
+   路由:#/ 探索 · #/channels · #/channel/:id · #/block/:id
+        #/me 我的档案 · #/make 创作 · #/settings 设置
    ============================================================ */
 
 "use strict";
 
 /* ---------- 图标 ---------- */
 const I = {
-  heart: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.5-5.9-8.5-11.5C3.5 6.2 5.7 4 8.4 4c1.5 0 2.9.7 3.6 1.9C12.7 4.7 14.1 4 15.6 4c2.7 0 4.9 2.2 4.9 5.5C20.5 15.1 12 21 12 21z"/></svg>',
-  heartO: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5S3.5 14.8 3.5 9.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.5 2.8c0 5.6-8.5 11.3-8.5 11.3z"/></svg>',
-  plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
-  x: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-  down: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg>',
-  crop: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></svg>',
-  zin: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M21 21l-4.3-4.3"/></svg>',
-  zout: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M21 21l-4.3-4.3"/></svg>',
-  fit: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>',
-  check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
-  star: '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5L2.5 9.5l6.6-.9z"/></svg>',
-  trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6"/></svg>',
-  edit: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>',
-  layers: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l10 5.5L12 13 2 7.5zM2 12.5L12 18l10-5.5M2 17.5L12 23l10-5.5"/></svg>',
-  copy: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="1"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>',
+  heart: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.5-5.9-8.5-11.5C3.5 6.2 5.7 4 8.4 4c1.5 0 2.9.7 3.6 1.9C12.7 4.7 14.1 4 15.6 4c2.7 0 4.9 2.2 4.9 5.5C20.5 15.1 12 21 12 21z"/></svg>',
+  heartO: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5S3.5 14.8 3.5 9.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.5 2.8c0 5.6-8.5 11.3-8.5 11.3z"/></svg>',
+  conn: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  plus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  x: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  down: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg>',
+  crop: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></svg>',
+  zin: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M21 21l-4.3-4.3"/></svg>',
+  zout: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M21 21l-4.3-4.3"/></svg>',
+  fit: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>',
+  check: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+  trash: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6"/></svg>',
+  edit: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>',
+  layers: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l10 5.5L12 13 2 7.5zM2 12.5L12 18l10-5.5M2 17.5L12 23l10-5.5"/></svg>',
+  copy: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="1"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>',
 };
 
 const view = document.getElementById("view");
@@ -32,14 +33,13 @@ const toastRoot = document.getElementById("toast-root");
 /* ============================================================
    通用 UI
    ============================================================ */
-function toast(msg, accent = false) {
+function toast(msg) {
   const t = document.createElement("div");
-  t.className = "toast" + (accent ? " toast--accent" : "");
+  t.className = "toast";
   t.innerHTML = msg;
   toastRoot.appendChild(t);
-  setTimeout(() => { t.style.transition = "opacity .3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 320); }, 2200);
+  setTimeout(() => { t.style.transition = "opacity .25s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 280); }, 2100);
 }
-
 function openModal(html) {
   closeModal();
   const ov = document.createElement("div");
@@ -55,36 +55,12 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal()
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
-
-/* 藏品卡(masonry 内) */
-function workCard(w) {
-  const liked = isLiked(w.id);
-  const hue = HUES[w.hue] || HUES.yuebai;
-  return `
-  <a class="wcard" href="#/work/${encodeURIComponent(w.id)}">
-    ${w.kind === "photo" ? '<span class="wcard__tag">我的照片</span>' : ""}
-    <button class="wcard__heart ${liked ? "is-on" : ""}" data-heart="${w.id}" aria-label="收藏">${liked ? I.heart : I.heartO}</button>
-    <img class="wcard__img" src="${workImage(w, 480)}" alt="${esc(w.name)}" loading="lazy" data-fb="${esc(w.id)}"
-         width="${Math.round(480 * (w.ar >= 1 ? 1 : w.ar))}" height="${Math.round(480 / (w.ar >= 1 ? w.ar : 1))}">
-    <div class="wcard__body">
-      <div class="wcard__name">${esc(w.name)}</div>
-      <div class="wcard__meta">${esc(w.artist)} · ${esc(w.era)}</div>
-    </div>
-  </a>`;
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/* 点爱心(事件委托) */
-document.addEventListener("click", e => {
-  const h = e.target.closest("[data-heart]");
-  if (!h) return;
-  e.preventDefault(); e.stopPropagation();
-  const on = toggleLike(h.dataset.heart);
-  h.classList.toggle("is-on", on);
-  h.innerHTML = on ? I.heart : I.heartO;
-  toast(on ? `${I.heart} 已收藏 · 进入「我的 Rijksstudio」` : "已取消收藏");
-});
-
-/* 真实影像加载失败 → 程序化兜底图(站点离线也可用) */
+/* 远程图加载失败 → 程序化兜底(kb 专属) */
 document.addEventListener("error", e => {
   const t = e.target;
   if (!t || t.tagName !== "IMG" || !t.dataset.fb) return;
@@ -95,6 +71,76 @@ document.addEventListener("error", e => {
 }, true);
 
 /* ============================================================
+   块(block)模型 —— 一切内容皆块
+   ============================================================ */
+function allBlocks() {
+  const list = [];
+  KB.forEach(w => list.push({ kind: "kb", id: w.id, w, title: w.name, sub: `${w.artist} · ${w.era}`, img: () => workImage(w, 480), ar: w.ar }));
+  state.photos.forEach(w => list.push({ kind: "photo", id: w.id, w, title: w.name, sub: String(w.era), img: () => workImage(w, 480), ar: w.ar }));
+  state.crops.forEach(c => {
+    const src = workById(c.work);
+    list.push({ kind: "crop", id: c.id, c, title: c.note || "未注解的细节", sub: src ? `细节 · ${src.name}` : "细节", img: () => c.data, ar: c.ar || 1 });
+  });
+  state.texts.forEach(t => list.push({ kind: "text", id: t.id, t, title: "文字碎片", sub: "碎片" }));
+  state.creations.forEach(cr => list.push({ kind: "creation", id: cr.id, cr, title: cr.title, sub: "我的创作", img: () => cr.data, ar: 680 / 906 }));
+  return list;
+}
+function blockById(id) { return allBlocks().find(b => b.id === id); }
+function isLiked(id) { return state.likes.includes(id); }
+function toggleLike(id) {
+  const i = state.likes.indexOf(id);
+  if (i >= 0) state.likes.splice(i, 1); else state.likes.push(id);
+  saveState();
+  return i < 0;
+}
+
+/* ---------- 块卡片(masonry 内) ---------- */
+function blockCard(b) {
+  if (b.kind === "text") {
+    return `<a class="tblk" href="#/block/${encodeURIComponent(b.id)}">
+      <div class="tblk__body">${esc(b.t.text.slice(0, 220))}${b.t.text.length > 220 ? "…" : ""}</div>
+      <div class="tblk__m">文字碎片 · ${fmtDate(b.t.created)}</div>
+    </a>`;
+  }
+  const liked = isLiked(b.id);
+  return `<a class="blk" href="#/block/${encodeURIComponent(b.id)}">
+    <div class="blk__imgwrap">
+      ${b.kind === "photo" ? '<span class="blk__badge">我的照片</span>' : ""}
+      ${b.kind === "creation" ? '<span class="blk__badge">创作</span>' : ""}
+      ${b.kind === "crop" ? '<span class="blk__badge">细节</span>' : ""}
+      <div class="blk__acts">
+        <button class="bact ${liked ? "is-on" : ""}" data-like="${b.id}" title="收藏">${liked ? I.heart : I.heartO}</button>
+        <button class="bact" data-conn="${b.id}" title="连接到频道">${I.conn}</button>
+      </div>
+      <img src="${b.img()}" ${b.kind === "kb" ? `data-fb="${esc(b.id)}"` : ""} alt="${esc(b.title)}" loading="lazy"
+           ${b.ar ? `style="aspect-ratio:${b.ar}"` : ""}>
+    </div>
+    <div class="blk__cap">
+      <div class="blk__t">${esc(b.title)}</div>
+      <div class="blk__m">${esc(b.sub)}</div>
+    </div>
+  </a>`;
+}
+
+/* 全局:卡片上的 ♥ 与 ＋ 连接(事件委托) */
+document.addEventListener("click", e => {
+  const lk = e.target.closest("[data-like]");
+  if (lk) {
+    e.preventDefault(); e.stopPropagation();
+    const on = toggleLike(lk.dataset.like);
+    lk.classList.toggle("is-on", on);
+    lk.innerHTML = on ? I.heart : I.heartO;
+    toast(on ? "已收藏" : "已取消收藏");
+    return;
+  }
+  const cn = e.target.closest("[data-conn]");
+  if (cn) {
+    e.preventDefault(); e.stopPropagation();
+    connectModal(cn.dataset.conn);
+  }
+});
+
+/* ============================================================
    路由
    ============================================================ */
 function parseHash() {
@@ -102,313 +148,259 @@ function parseHash() {
   const [path, qs] = raw.split("?");
   return { seg: path.split("/").filter(Boolean), q: new URLSearchParams(qs || "") };
 }
-
 let current = parseHash();
 window.addEventListener("hashchange", () => { current = parseHash(); render(); window.scrollTo(0, 0); });
-document.addEventListener("zaiguan:photo-ready", () => {
-  const y = window.scrollY; render(); window.scrollTo(0, y);
-});
+document.addEventListener("zaiguan:photo-ready", () => { const y = window.scrollY; render(); window.scrollTo(0, y); });
 
 document.getElementById("search-form").addEventListener("submit", e => {
   e.preventDefault();
   const v = document.getElementById("search-input").value.trim();
-  location.hash = "#/collection" + (v ? "?q=" + encodeURIComponent(v) : "");
+  location.hash = "#/" + (v ? "?q=" + encodeURIComponent(v) : "");
 });
+document.getElementById("add-btn").addEventListener("click", addModal);
 
 function setActiveNav(key) {
-  document.querySelectorAll("#main-nav a").forEach(a => a.classList.toggle("is-active", a.dataset.nav === key));
+  document.querySelectorAll(".topnav a").forEach(a => a.classList.toggle("is-active", a.dataset.nav === key));
 }
-
 function render() {
-  const [root, a, b] = current.seg;
-  document.body.dataset.route = root || "home";
+  const [root, a] = current.seg;
   closeModal();
+  document.body.dataset.route = root || "home";
   if (!root) return viewHome();
-  if (root === "collection") return viewCollection();
-  if (root === "work" && a) return viewWork(decodeURIComponent(a));
-  if (root === "studio") return viewStudio();
-  if (root === "set" && a) return viewSet(decodeURIComponent(a));
+  if (root === "channels") return viewChannels();
+  if (root === "channel" && a) return viewChannel(decodeURIComponent(a));
+  if (root === "block" && a) return viewBlock(decodeURIComponent(a));
+  if (root === "me") return viewMe();
   if (root === "make") return viewMake();
   if (root === "settings") return viewSettings();
   viewHome();
 }
 
 /* ============================================================
-   首页
+   探索(全部块流)
    ============================================================ */
-function viewHome() {
-  setActiveNav("");
-  const heroArts = [KB[0], KB[7], KB[21]].map((w, i) =>
-    `<img src="${workImage(w, 1080)}" data-fb="${esc(w.id)}" alt="" style="${[
-      "left:-6%;top:-8%;width:62%;height:118%",
-      "right:-8%;top:0;width:56%;height:100%",
-      "left:24%;bottom:-14%;width:52%;height:76%",
-    ][i]}">`).join("");
-  const rnd = mulberry32(20260919);
-  const featured = [...KB].sort(() => rnd() - 0.5).slice(0, 6);
-  view.innerHTML = `
-  <section class="hero">
-    <div class="hero__art">${heroArts}</div>
-    <div class="container hero__inner">
-      <div class="hero__tag">再观 Rijksstudio</div>
-      <h1 class="h-display h1">让观看,<br>发生第二次。</h1>
-      <p>把展签前停留的三十秒,变成可以回去的地方。收藏打动你的作品,
-      裁下画面里最锋利的那个细节,再用馆藏完成一次属于你的创作——
-      这是你的 Rijksstudio。</p>
-      <div class="hero__cta">
-        <a class="btn btn--primary" href="#/collection">进入馆藏</a>
-        <a class="btn btn--ghost-light" href="#/studio">我的 Rijksstudio</a>
-      </div>
-    </div>
-  </section>
-
-  <div class="container">
-    <div class="pillars" style="margin-top:-1px">
-      <div class="pillar">
-        <div class="pillar__no">01 — 收藏</div>
-        <h3 class="h3">♥ 收藏作品</h3>
-        <p>在馆藏中漫游,像在展厅里一样随手记下心动:卡片上的爱心,一点即藏。</p>
-      </div>
-      <div class="pillar">
-        <div class="pillar__no">02 — 裁剪</div>
-        <h3 class="h3">✂ 裁剪细节</h3>
-        <p>深度放大一幅画,框住最打动你的局部——鹤的丹顶、笔的飞白、釉的开片,存进细节墙。</p>
-      </div>
-      <div class="pillar">
-        <div class="pillar__no">03 — 再创作</div>
-        <h3 class="h3">✎ 用藏品创作</h3>
-        <p>把细节与藏品拖上画布,配一句想说的话,导出你的拼贴创作。馆藏因你而不同。</p>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div><div class="kicker">Collection</div><h2 class="h-display h2">馆藏精选</h2></div>
-      <a class="link" href="#/collection"><span>浏览全部 →</span></a>
-    </div>
-    <div class="masonry">${featured.map(workCard).join("")}</div>
-
-    <div class="section-head">
-      <div><div class="kicker">Visitor Stories</div><h2 class="h-display h2">大家的收藏集</h2></div>
-      <a class="link" href="#/studio?tab=sets"><span>全部收藏集 →</span></a>
-    </div>
-    <div class="stories" style="margin-bottom:clamp(40px,7vw,84px)">
-      ${DEMO_SETS.map(setStory).join("")}
-    </div>
-  </div>`;
-}
-
-function setCoverImgs(items, n = 3) {
-  const works = items.map(workById).filter(Boolean).slice(0, n);
-  while (works.length && works.length < n) works.push(works[0]);
-  return works.map(w => `<img src="${workImage(w, 360)}" alt="">`).join("");
-}
-function setStory(s) {
-  return `
-  <a class="story" href="#/set/${encodeURIComponent(s.id)}">
-    <div class="story__cover">${setCoverImgs(s.items)}</div>
-    <div class="story__body">
-      <div class="story__name">${esc(s.name)}</div>
-      <div class="story__meta">${s.date} · <b>${s.items.length}</b> 件作品 · ${esc(s.author)}</div>
-    </div>
-  </a>`;
-}
-
-/* ============================================================
-   馆藏(Collection)
-   ============================================================ */
-function viewCollection() {
-  setActiveNav("collection");
-  const q = current.q.get("q") || "";
-  const cat = current.q.get("cat") || "";
-  const hue = current.q.get("hue") || "";
-  if (q) document.getElementById("search-input").value = q;
-
-  let list = allWorks();
-  if (cat) list = list.filter(w => w.category === cat);
-  if (hue) list = list.filter(w => w.hue === hue);
-  if (q) {
-    const k = q.toLowerCase();
-    list = list.filter(w => [w.name, w.artist, w.era, w.medium, w.collection, HUES[w.hue]?.name]
-      .join(" ").toLowerCase().includes(k));
-  }
-
-  view.innerHTML = `
-  <div class="container page">
-    <div class="section-head mt-0" style="margin-top:26px">
-      <div><div class="kicker">Rijksstudio</div><h1 class="h-display h2">馆藏 Collection</h1></div>
-      <div class="row">
-        <span class="small grey">颜色筛选 · 点色找感觉</span>
-        <a class="btn btn--quiet btn--sm" href="#/collection?upload=1" id="btn-upload">${I.plus} 上传观展照片</a>
-      </div>
-    </div>
-
-    <div class="uploadzone" id="uploadzone" role="button" tabindex="0">
-      <b style="font-size:.92rem">＋ 把观展照片放进馆藏</b>
-      <div class="small" style="margin-top:6px">自动读取拍摄时间(EXIF)与主色,按色系归入你的 Rijksstudio · 图片仅存本机</div>
-      <input type="file" id="photo-input" accept="image/*" multiple hidden>
-    </div>
-
-    <div class="filterbar">
-      <span class="filterbar__label">类别</span>
-      <div class="chips">
-        <a class="chip ${!cat ? "is-on" : ""}" href="${collHref({ q, hue })}">全部</a>
-        ${CATEGORIES.map(c => `<a class="chip ${cat === c ? "is-on" : ""}" href="${collHref({ q, hue, cat: c })}">${c}</a>`).join("")}
-        <a class="chip ${cat === "我的照片" ? "is-on" : ""}" href="${collHref({ q, hue, cat: "我的照片" })}">我的照片</a>
-      </div>
-      <span class="filterbar__label">色系</span>
-      <div class="swatches">
-        <a class="swatch ${!hue ? "is-on" : ""}" style="background:conic-gradient(#cc4c28,#aaa04d,#52755c,#436178,#202327,#cc4c28)" href="${collHref({ q, cat })}" title="全部颜色"></a>
-        ${HUE_IDS.map(id => `<a class="swatch ${hue === id ? "is-on" : ""}" style="background:${HUES[id].dot}" href="${collHref({ q, cat, hue: id })}" title="${HUES[id].name}"></a>`).join("")}
-      </div>
-      <span class="filterbar__count">${list.length} 件${q ? ` · “${esc(q)}”` : ""}</span>
-    </div>
-
-    ${list.length ? `<div class="masonry">${list.map(workCard).join("")}</div>` : `
-    <div class="emptybox">
-      <h3 class="h3">没有找到符合条件的藏品</h3>
-      <p>换个关键词,或点上方色点按颜色探索。</p>
-      <a class="btn btn--ghost" href="#/collection">清除筛选</a>
-    </div>`}
-  </div>`;
-
-  const zone = document.getElementById("uploadzone");
-  const input = document.getElementById("photo-input");
-  zone.addEventListener("click", () => input.click());
-  zone.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") input.click(); });
-  ["dragover", "dragenter"].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add("is-drag"); }));
-  ["dragleave", "drop"].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove("is-drag"); }));
-  zone.addEventListener("drop", e => { if (e.dataTransfer.files.length) ingestFiles(e.dataTransfer.files); });
-  input.addEventListener("change", () => { if (input.files.length) ingestFiles(input.files); });
-
-  if (current.q.get("upload")) zone.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-function collHref(over) {
+function streamHref(over) {
   const p = new URLSearchParams();
   const merged = { q: current.q.get("q"), cat: current.q.get("cat"), hue: current.q.get("hue"), ...over };
   Object.entries(merged).forEach(([k, v]) => { if (v) p.set(k, v); });
   const s = p.toString();
-  return "#/collection" + (s ? "?" + s : "");
+  return "#/" + (s ? "?" + s : "");
 }
 
-async function ingestFiles(files) {
-  let n = 0;
-  for (const f of files) {
-    if (!f.type.startsWith("image/")) continue;
-    try { await ingestPhoto(f); n++; } catch { /* 跳过坏文件 */ }
+function filterBlocks(list) {
+  const q = current.q.get("q") || "";
+  const cat = current.q.get("cat") || "";
+  const hue = current.q.get("hue") || "";
+  let out = list;
+  if (cat === "我的照片") out = out.filter(b => b.kind === "photo");
+  else if (cat === "碎片") out = out.filter(b => b.kind === "text");
+  else if (cat === "细节") out = out.filter(b => b.kind === "crop");
+  else if (cat === "创作") out = out.filter(b => b.kind === "creation");
+  else if (cat) out = out.filter(b => b.kind === "kb" && b.w.category === cat);
+  if (hue) out = out.filter(b => (b.kind === "kb" || b.kind === "photo") && b.w.hue === hue);
+  if (q) {
+    const k = q.toLowerCase();
+    out = out.filter(b => [b.title, b.sub, b.kind === "kb" ? [b.w.medium, b.w.collection, b.w.desc].join(" ") : ""].join(" ").toLowerCase().includes(k));
   }
-  if (n) { toast(`${I.check} 已收录 ${n} 张观展照片`, true); render(); }
-  else toast("未能读取图片");
+  return out;
 }
 
-/* ============================================================
-   作品页(深度缩放 + 裁剪)
-   ============================================================ */
-function viewWork(id) {
-  setActiveNav("collection");
-  const w = workById(id);
-  if (!w) { view.innerHTML = `<div class="container page emptybox"><h3>作品不存在</h3><a class="btn btn--ghost" href="#/collection">返回馆藏</a></div>`; return; }
-  const hue = HUES[w.hue] || HUES.yuebai;
-  const note = state.notes[id] || {};
-  const related = allWorks().filter(x => x.hue === w.hue && x.id !== id).slice(0, 4);
-  const liked = isLiked(id);
+function viewHome() {
+  setActiveNav("home");
+  const q = current.q.get("q") || "";
+  const cat = current.q.get("cat") || "";
+  const hue = current.q.get("hue") || "";
+  if (q) document.getElementById("search-input").value = q;
+  const cats = [...CATEGORIES, "我的照片", "碎片", "细节", "创作"];
+  const list = filterBlocks(allBlocks());
 
   view.innerHTML = `
   <div class="container page">
-    <div class="crumbs"><a href="#/collection">馆藏</a> / <a href="${collHref({ cat: w.category, hue: "", q: "" })}">${esc(w.category)}</a> / ${esc(w.name)}</div>
-    <div class="workpage">
-      <div>
-        <div class="viewer" id="viewer">
-          <div class="viewer__stage" id="vstage">
-            <img class="viewer__img" id="vimg" alt="${esc(w.name)}" src="${workImage(w, 1080)}" crossorigin="anonymous" data-fb="${esc(w.id)}" draggable="false">
+    <div class="pagehead">
+      <h1>${q ? `“${esc(q)}”` : "探索"}</h1>
+      <span class="sub">${q ? "的搜索结果 · " : "全部块 · "}把碎片收进频道,让观看留下痕迹</span>
+    </div>
+    <div class="toolrow">
+      <div class="chips">
+        <a class="chip ${!cat ? "is-on" : ""}" href="${streamHref({ cat: "", hue: "" })}">全部</a>
+        ${cats.map(c => `<a class="chip ${cat === c ? "is-on" : ""}" href="${streamHref({ cat: c, hue: "" })}">${c}</a>`).join("")}
+      </div>
+      <div class="dots">
+        <span class="hint" style="font-size:var(--fs1)">色系</span>
+        <a class="dot ${!hue ? "is-on" : ""}" style="background:conic-gradient(#cc4c28,#aaa04d,#52755c,#436178,#202327,#cc4c28)" href="${streamHref({ hue: "" })}"></a>
+        ${HUE_IDS.map(id => `<a class="dot ${hue === id ? "is-on" : ""}" style="background:${HUES[id].dot}" href="${streamHref({ hue: id })}" title="${HUES[id].name}"></a>`).join("")}
+      </div>
+      <span class="count">${list.length} 块</span>
+    </div>
+    ${list.length ? `<div class="masonry">${list.map(blockCard).join("")}</div>`
+      : `<div class="empty"><h3>没有匹配的块</h3><p>换个关键词,或清除筛选。</p><a class="lnk" href="#/">浏览全部</a></div>`}
+    <footer class="foot" style="margin-top:45px">
+      <span>再观 · 观展后的个人知识档案</span>
+      <span>形态参考 are.na · 真实影像来自 Wikimedia Commons · 数据仅存本机</span>
+    </footer>
+  </div>`;
+}
+
+/* ============================================================
+   块详情(图像 → 观看台;文字 → 衬线页)
+   ============================================================ */
+function viewBlock(id) {
+  setActiveNav("");
+  const b = blockById(id);
+  if (!b) { view.innerHTML = `<div class="container page empty"><h3>块不存在</h3><a class="lnk" href="#/">返回探索</a></div>`; return; }
+  const liked = isLiked(id);
+  const inChannels = state.channels.filter(c => c.items.includes(id));
+
+  if (b.kind === "text") {
+    view.innerHTML = `
+    <div class="container page">
+      <div class="bdetail">
+        <div><div class="btext">${esc(b.t.text)}</div></div>
+        <aside>
+          <div class="bside__t">文字碎片</div>
+          <div class="bside__m">${fmtDate(b.t.created)} · ${inChannels.length ? inChannels.map(c => esc(c.name)).join(" / ") : "未连接频道"}</div>
+          <div class="acts">
+            <button class="act" id="a-conn">${I.conn} 连接到频道</button>
+            <button class="act" id="a-make">${I.edit} 拿去创作</button>
+            <button class="act act--danger" id="a-del">${I.trash} 删除碎片</button>
           </div>
-          <div class="viewer__hint" id="vhint">滚轮缩放 · 拖动平移 · 双击放大</div>
-          <div class="viewer__bar" id="vbar">
-            <button class="vbtn" id="v-zin" title="放大">${I.zin}</button>
-            <button class="vbtn" id="v-zout" title="缩小">${I.zout}</button>
-            <button class="vbtn" id="v-fit" title="适配">${I.fit}</button>
+          <p class="hint">文字会以衬线体进入创作画布。</p>
+        </aside>
+      </div>
+    </div>`;
+    document.getElementById("a-conn").addEventListener("click", () => connectModal(id));
+    document.getElementById("a-make").addEventListener("click", () => {
+      makeStashText = b.t.text.slice(0, 60);
+      location.hash = "#/make";
+    });
+    document.getElementById("a-del").addEventListener("click", () => {
+      if (confirm("删除这条碎片?")) {
+        state.texts = state.texts.filter(t => t.id !== id);
+        state.channels.forEach(c => c.items = c.items.filter(x => x !== id));
+        saveState(); toast("碎片已删除");
+        location.hash = "#/";
+      }
+    });
+    return;
+  }
+
+  /* 图像块 */
+  const bigSrc = b.kind === "kb" || b.kind === "photo" ? workImage(b.w, 1080) : b.img();
+  const canCrop = b.kind === "kb" || b.kind === "photo";
+  const isOwn = b.kind !== "kb";
+  view.innerHTML = `
+  <div class="container page">
+    <div class="bdetail">
+      <div>
+        <div class="bstage" id="stage">
+          <div class="bstage__inner" id="vstage">
+            <img class="bstage__img" id="vimg" alt="${esc(b.title)}" src="${bigSrc}"
+                 ${canCrop ? 'crossorigin="anonymous"' : ""} ${b.kind === "kb" ? `data-fb="${esc(b.id)}"` : ""}
+                 draggable="false">
+          </div>
+          <div class="bstage__bar" id="vbar">
+            <button class="sbtn" id="v-zin" title="放大">${I.zin}</button>
+            <button class="sbtn" id="v-zout" title="缩小">${I.zout}</button>
+            <button class="sbtn" id="v-fit" title="适配">${I.fit}</button>
             <span style="flex:1"></span>
-            <button class="vbtn vbtn--wide" id="v-crop">${I.crop} 裁剪细节</button>
-            <button class="vbtn vbtn--wide" id="v-dl">${I.down} 下载</button>
+            ${canCrop ? `<button class="sbtn sbtn--wide" id="v-crop">${I.crop} 裁剪细节</button>` : ""}
           </div>
         </div>
-        ${related.length ? `
-        <div class="section-head"><div><div class="kicker kicker--grey">同色系 · ${hue.name}</div><h2 class="h-display h2" style="font-size:1.3rem">继续看</h2></div></div>
-        <div class="masonry" style="columns:2 240px">${related.map(workCard).join("")}</div>` : ""}
+        ${b.kind === "kb" && relatedOf(b).length ? `
+        <div class="pagehead" style="margin-top:35px"><h1 style="font-size:var(--fs4)">同色系</h1><span class="sub">继续看</span></div>
+        <div class="masonry" style="columns:4 200px">${relatedOf(b).map(blockCard).join("")}</div>` : ""}
       </div>
 
-      <aside class="workinfo">
-        <h1 class="workinfo__title">${esc(w.name)}</h1>
-        <p class="workinfo__artist"><b>${esc(w.artist)}</b> · ${esc(w.era)}</p>
-        <div class="workinfo__id">再观馆藏号 ${esc(id.toUpperCase())} · 色系 ${hue.name}</div>
-
-        <div class="workacts">
-          <button class="btn ${liked ? "btn--primary" : "btn--ghost"}" id="act-like">${liked ? I.heart + " 已收藏" : I.heartO + " 收藏"}</button>
-          <button class="btn btn--dark" id="act-set">${I.plus} 加入收藏集</button>
+      <aside>
+        <div class="bside__t">${esc(b.title)}</div>
+        <div class="bside__m">${esc(b.sub)}</div>
+        <div class="acts">
+          <button class="act ${liked ? "is-on" : ""}" id="a-like">${liked ? I.heart + " 已收藏" : I.heartO + " 收藏"}</button>
+          <button class="act" id="a-conn">${I.conn} 连接到频道${inChannels.length ? ` · ${inChannels.length}` : ""}</button>
+          ${canCrop ? `<button class="act" id="a-crop2">${I.crop} 裁剪细节</button>` : ""}
+          <button class="act" id="a-make">${I.edit} 拿去创作</button>
+          <button class="act" id="a-dl">${I.down} 下载图片</button>
+          ${isOwn ? `<button class="act act--danger" id="a-del">${I.trash} 删除这个${b.kind === "photo" ? "照片" : b.kind === "crop" ? "细节" : "创作"}</button>` : ""}
         </div>
-
-        <table class="metatable">
-          <tr><th>艺术家</th><td>${esc(w.artist)}</td></tr>
-          <tr><th>年代</th><td>${esc(w.era)}</td></tr>
-          <tr><th>媒介</th><td>${esc(w.medium)}</td></tr>
-          <tr><th>类别</th><td>${esc(w.category)}</td></tr>
-          <tr><th>色系</th><td><span class="wcard__hue" style="background:${hue.dot}"></span>${hue.name}</td></tr>
-          <tr><th>馆藏</th><td>${esc(w.collection)}</td></tr>
-          ${w.src ? `<tr><th>信息来源</th><td><a class="link" href="https://commons.wikimedia.org/wiki/${encodeURIComponent(w.src)}" target="_blank" rel="noopener"><span>Wikimedia Commons</span></a></td></tr>` : ""}
-        </table>
-
-        ${w.desc ? `<p class="workinfo__desc">${esc(w.desc)}</p>` : ""}
-
-        <div class="notebox">
-          <div class="kicker kicker--grey" style="margin-bottom:8px">观展笔记</div>
-          <textarea id="note-input" placeholder="为什么在这件作品前停下来?写点什么…">${esc(note.text || "")}</textarea>
-          <div class="stars" id="stars">
-            ${[1, 2, 3, 4, 5].map(n => `<button data-star="${n}" class="${(note.stars || 0) >= n ? "is-on" : ""}" aria-label="${n} 星">${I.star}</button>`).join("")}
-          </div>
-          <div class="small grey">笔记与星级只存在你的浏览器里</div>
-        </div>
+        <table class="meta">${b.kind === "kb" ? kbMeta(b.w) : ownMeta(b)}</table>
+        ${b.kind === "kb" ? noteBox(b.w.id) : ""}
       </aside>
     </div>
   </div>`;
 
-  initViewer(w);
-  document.getElementById("v-dl").addEventListener("click", () => {
-    // 跨域图片 <a download> 不生效,经 blob 落地
-    fetch(workImage(w, 1080))
-      .then(r => r.blob())
-      .then(b => downloadDataUrl(URL.createObjectURL(b), `${w.name}-再观.jpg`))
-      .catch(() => downloadDataUrl(workImage(w, 1080), `${w.name}-再观.jpg`));
+  initViewer(b);
+  document.getElementById("a-like").addEventListener("click", () => { toggleLike(id); viewBlock(id); });
+  document.getElementById("a-conn").addEventListener("click", () => connectModal(id));
+  document.getElementById("a-crop2")?.addEventListener("click", () => document.getElementById("v-crop")?.click());
+  document.getElementById("a-dl").addEventListener("click", () => {
+    fetch(bigSrc).then(r => r.blob())
+      .then(bl => downloadDataUrl(URL.createObjectURL(bl), `${b.title}-再观.jpg`))
+      .catch(() => downloadDataUrl(bigSrc, `${b.title}-再观.jpg`));
   });
-  document.getElementById("act-like").addEventListener("click", () => {
-    const on = toggleLike(id);
-    toast(on ? `${I.heart} 已收藏` : "已取消收藏");
-    render();
+  document.getElementById("a-make").addEventListener("click", () => {
+    makeStash = [{ src: b.kind === "kb" ? workImage(b.w, 480) : b.img(), ar: b.ar || 1 }];
+    location.hash = "#/make";
   });
-  document.getElementById("act-set").addEventListener("click", () => setsModal(id));
+  document.getElementById("a-del")?.addEventListener("click", () => {
+    if (!confirm("确定删除?")) return;
+    if (b.kind === "photo") state.photos = state.photos.filter(p => p.id !== id);
+    if (b.kind === "crop") state.crops = state.crops.filter(c => c.id !== id);
+    if (b.kind === "creation") state.creations = state.creations.filter(c => c.id !== id);
+    state.channels.forEach(c => c.items = c.items.filter(x => x !== id));
+    state.likes = state.likes.filter(x => x !== id);
+    saveState(); toast("已删除");
+    location.hash = "#/";
+  });
 
   const noteInput = document.getElementById("note-input");
-  let deb = null;
-  noteInput.addEventListener("input", () => {
-    clearTimeout(deb);
-    deb = setTimeout(() => {
-      state.notes[id] = { ...(state.notes[id] || {}), text: noteInput.value };
-      saveState();
-    }, 500);
-  });
-  document.getElementById("stars").addEventListener("click", e => {
-    const b = e.target.closest("[data-star]"); if (!b) return;
-    const n = +b.dataset.star;
-    state.notes[id] = { ...(state.notes[id] || {}), stars: (state.notes[id] || {}).stars === n ? 0 : n };
-    saveState();
-    document.querySelectorAll("#stars [data-star]").forEach(x => x.classList.toggle("is-on", +x.dataset.star <= state.notes[id].stars));
-  });
+  if (noteInput) {
+    let deb = null;
+    noteInput.addEventListener("input", () => {
+      clearTimeout(deb);
+      deb = setTimeout(() => {
+        state.notes[id] = { ...(state.notes[id] || {}), text: noteInput.value };
+        saveState();
+      }, 500);
+    });
+  }
 }
 
-/* ---------- 深度缩放查看器 ---------- */
-function initViewer(w) {
+function kbMeta(w) {
+  const hue = HUES[w.hue] || HUES.yuebai;
+  return `
+    <tr><th>作者</th><td>${esc(w.artist)}</td></tr>
+    <tr><th>年代</th><td>${esc(w.era)}</td></tr>
+    <tr><th>媒介</th><td>${esc(w.medium)}</td></tr>
+    <tr><th>类别</th><td>${esc(w.category)}</td></tr>
+    <tr><th>色系</th><td>${hue.name}</td></tr>
+    <tr><th>馆藏</th><td>${esc(w.collection)}</td></tr>
+    ${w.src ? `<tr><th>来源</th><td><a class="uline" href="https://commons.wikimedia.org/wiki/${encodeURIComponent(w.src)}" target="_blank" rel="noopener">Wikimedia Commons</a></td></tr>` : ""}
+    ${w.desc ? `<tr><th>简介</th><td style="line-height:1.7">${esc(w.desc)}</td></tr>` : ""}`;
+}
+function ownMeta(b) {
+  const rows = [];
+  if (b.kind === "photo") rows.push(["拍摄", b.w.era], ["色系", (HUES[b.w.hue] || {}).name || ""], ["归类", "我的照片"]);
+  if (b.kind === "crop") { const s = workById(b.c.work); rows.push(["来自", s ? s.name : "已删除"], ["加入", fmtDate(b.c.created)]); }
+  if (b.kind === "creation") rows.push(["导出于", fmtDate(b.cr.created)], ["尺寸", "680 × 906"]);
+  rows.push(["所在频道", state.channels.filter(c => c.items.includes(b.id)).map(c => c.name).join("、") || "未连接"]);
+  return rows.map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join("");
+}
+function relatedOf(b) {
+  return allBlocks().filter(x => x.kind === "kb" && x.w.hue === b.w.hue && x.id !== b.id).slice(0, 4);
+}
+function noteBox(wid) {
+  const n = state.notes[wid] || {};
+  return `
+  <div class="field">
+    <label>观展笔记(只存在本机)</label>
+    <textarea class="textin" id="note-input" placeholder="为什么在这件作品前停下来?">${esc(n.text || "")}</textarea>
+  </div>`;
+}
+
+/* ---------- 观看台(缩放/平移/裁剪) ---------- */
+function initViewer(b) {
   const stage = document.getElementById("vstage");
   const img = document.getElementById("vimg");
-  const hint = document.getElementById("vhint");
   let s = 1, tx = 0, ty = 0, fitS = 1, userTouched = false;
 
   const apply = () => { img.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; };
@@ -421,16 +413,19 @@ function initViewer(w) {
     ty = (r.height - img.naturalHeight * s) / 2;
     apply();
   };
-  // 缓存图 complete 立即为真,需等布局稳定(双 rAF)再适配,200ms 后再校正一次
   const scheduleFit = () => requestAnimationFrame(() => requestAnimationFrame(() => { if (!userTouched) doFit(); }));
-  img.addEventListener("load", scheduleFit, { once: true });
+  img.addEventListener("load", () => {
+    scheduleFit();
+    setTimeout(() => { if (!userTouched && !cropMode) doFit(); }, 350);
+  }, { once: true });
   if (img.complete && img.naturalWidth) scheduleFit();
   [100, 300, 700].forEach(d => setTimeout(() => { if (!userTouched && !cropMode) doFit(); }, d));
-  let rsT = null; // 防抖:面板动画等瞬态尺寸不参与适配
-  window.addEventListener("resize", () => {
-    clearTimeout(rsT);
-    rsT = setTimeout(() => { if (!cropMode) doFit(); }, 150);
-  });
+  let rsT = null;
+  window.addEventListener("resize", () => { clearTimeout(rsT); rsT = setTimeout(() => { if (!cropMode) doFit(); }, 150); });
+  // 决定性修复:舞台尺寸一旦稳定(瞬态布局→最终布局),自动重新适配
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(() => { if (!userTouched && !cropMode) doFit(); }).observe(stage);
+  }
 
   const zoomAt = (mx, my, f) => {
     userTouched = true;
@@ -439,7 +434,6 @@ function initViewer(w) {
     ty = my - (my - ty) * (ns / s);
     s = ns; apply();
   };
-
   stage.addEventListener("wheel", e => {
     e.preventDefault();
     const r = stage.getBoundingClientRect();
@@ -463,32 +457,24 @@ function initViewer(w) {
     zoomAt(e.clientX - r.left, e.clientY - r.top, 2);
   });
 
-  document.getElementById("v-zin").addEventListener("click", () => {
-    const r = stage.getBoundingClientRect();
-    zoomAt(r.width / 2, r.height / 2, 1.4);
-  });
-  document.getElementById("v-zout").addEventListener("click", () => {
-    const r = stage.getBoundingClientRect();
-    zoomAt(r.width / 2, r.height / 2, 1 / 1.4);
-  });
+  document.getElementById("v-zin").addEventListener("click", () => { const r = stage.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1.4); });
+  document.getElementById("v-zout").addEventListener("click", () => { const r = stage.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1 / 1.4); });
   document.getElementById("v-fit").addEventListener("click", doFit);
 
-  /* ---------- 裁剪模式 ---------- */
+  /* ---------- 裁剪 → 细节块 ---------- */
   let cropMode = false;
-  const btnCrop = document.getElementById("v-crop");
-
-  btnCrop.addEventListener("click", () => {
+  document.getElementById("v-crop")?.addEventListener("click", () => {
     cropMode = true;
-    hint.textContent = "拖动虚线框 · 四角调整大小";
-    btnCrop.style.display = "none";
     const bar = document.getElementById("vbar");
+    const cropBtnEl = document.getElementById("v-crop");
+    cropBtnEl.style.display = "none";
     bar.insertAdjacentHTML("beforeend", `
-      <button class="vbtn vbtn--wide" id="crop-ok" style="background:var(--accent);color:#fff">${I.check} 确认裁剪</button>
-      <button class="vbtn vbtn--wide is-danger" id="crop-no">${I.x} 取消</button>`);
+      <button class="sbtn sbtn--wide sbtn--primary" id="crop-ok">${I.check} 确认裁剪</button>
+      <button class="sbtn sbtn--wide" id="crop-no">${I.x} 取消</button>`);
 
     const r = stage.getBoundingClientRect();
     const bw = Math.min(r.width * 0.56, r.height * 0.62);
-    const bh = bw / Math.max(0.6, Math.min(1.8, w.ar || 1));
+    const bh = bw / Math.max(0.6, Math.min(1.8, b.ar || 1));
     const box = document.createElement("div");
     box.className = "cropbox";
     box.style.left = (r.width - bw) / 2 + "px";
@@ -500,13 +486,8 @@ function initViewer(w) {
       <div class="cropbox__size"></div>`;
     stage.appendChild(box);
     const sizeLbl = box.querySelector(".cropbox__size");
-    const updSize = () => {
-      const b = box.getBoundingClientRect(), r2 = stage.getBoundingClientRect();
-      sizeLbl.textContent = `${Math.round(b.width / s)} × ${Math.round(b.height / s)} px`;
-      void r2;
-    };
+    const updSize = () => { sizeLbl.textContent = `${Math.round(box.offsetWidth / s)} × ${Math.round(box.offsetHeight / s)} px`; };
     updSize();
-
     const clampBox = () => {
       const R = stage.getBoundingClientRect();
       let x = parseFloat(box.style.left), y = parseFloat(box.style.top);
@@ -535,65 +516,56 @@ function initViewer(w) {
         }
         clampBox(); updSize();
       };
-      const up = ev => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-        void ev;
-      };
+      const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
     });
 
-    document.getElementById("crop-no").addEventListener("click", () => {
-      box.remove(); exitCrop();
-    });
-    function exitCrop() {
+    const exitCrop = () => {
       cropMode = false;
-      hint.textContent = "滚轮缩放 · 拖动平移 · 双击放大";
       document.getElementById("crop-ok")?.remove();
       document.getElementById("crop-no")?.remove();
-      btnCrop.style.display = "";
-    }
+      cropBtnEl.style.display = "";
+    };
+    document.getElementById("crop-no").addEventListener("click", () => { box.remove(); exitCrop(); });
     document.getElementById("crop-ok").addEventListener("click", () => {
-      // 舞台坐标 → 图片坐标
-      const b = box.getBoundingClientRect(), R = stage.getBoundingClientRect();
-      const ix = (b.left - R.left - tx) / s, iy = (b.top - R.top - ty) / s;
-      const iw = b.width / s, ih = b.height / s;
+      const bx = box.getBoundingClientRect(), R = stage.getBoundingClientRect();
+      const ix = (bx.left - R.left - tx) / s, iy = (bx.top - R.top - ty) / s;
+      const iw = bx.width / s, ih = bx.height / s;
       const cw = img.naturalWidth, ch = img.naturalHeight;
       const cx0 = Math.max(0, Math.min(ix, cw - 8)), cy0 = Math.max(0, Math.min(iy, ch - 8));
       const cx1 = Math.min(cw, Math.max(8, ix + iw)), cy1 = Math.min(ch, Math.max(8, iy + ih));
       const rw = Math.round(cx1 - cx0), rh = Math.round(cy1 - cy0);
-      if (rw < 16 || rh < 16) { toast("裁剪区域太小,再拉大一点"); return; }
+      if (rw < 16 || rh < 16) { toast("裁剪区域太小"); return; }
       const k = Math.min(1, 900 / Math.max(rw, rh));
       const cv = document.createElement("canvas");
       cv.width = Math.round(rw * k); cv.height = Math.round(rh * k);
       cv.getContext("2d").drawImage(img, cx0, cy0, rw, rh, 0, 0, cv.width, cv.height);
-      const data = cv.toDataURL("image/jpeg", 0.88);
-      const crop = { id: uid("crop"), work: w.id, data, note: "", ar: rw / rh, created: Date.now() };
+      const crop = { id: uid("crop"), work: b.id, data: cv.toDataURL("image/jpeg", 0.88), note: "", ar: rw / rh, created: Date.now() };
       state.crops.unshift(crop); saveState();
       box.remove(); exitCrop();
-      cropModal(crop, w);
+      cropModal(crop, b);
     });
   });
 }
 
-/* 裁剪成功 → 写一句注 + 去创作 */
-function cropModal(crop, w) {
+/* 裁剪成功 → 注释 + 去创作 */
+function cropModal(crop, b) {
   const ov = openModal(`
-    <div class="kicker" style="margin-bottom:8px">✂ 已裁剪保存</div>
-    <h3 class="h3" style="margin-bottom:12px">来自《${esc(w.name)}》的细节</h3>
-    <img src="${crop.data}" style="width:100%;border:1px solid var(--line);border-radius:2px;margin-bottom:14px" alt="裁剪细节">
+    <h3>已裁下一块细节</h3>
+    <p class="modal__sub">来自《${esc(b.title)}》· 已存入「我的档案 · 细节」</p>
+    <img src="${crop.data}" style="width:100%;border:1px solid var(--line);border-radius:3px;margin-bottom:14px" alt="">
     <div class="field">
       <label>给这个细节写一句注(可选)</label>
       <input class="textin" id="crop-note" placeholder="比如:鹤的丹顶,一点朱砂。" maxlength="60">
     </div>
     <div class="modal__acts">
-      <button class="btn btn--quiet" id="cm-done">存入细节墙</button>
-      <button class="btn btn--primary" id="cm-make">${I.plus} 拿去创作</button>
+      <button class="mkbtn" id="cm-done">存入档案</button>
+      <button class="mkbtn mkbtn--dark" id="cm-make">${I.plus} 拿去创作</button>
     </div>`);
   ov.querySelector("#cm-done").addEventListener("click", () => {
     crop.note = ov.querySelector("#crop-note").value.trim();
-    saveState(); closeModal(); toast(`${I.check} 已存入细节墙`, true);
+    saveState(); closeModal(); toast("细节已入档案");
   });
   ov.querySelector("#cm-make").addEventListener("click", () => {
     crop.note = ov.querySelector("#crop-note").value.trim();
@@ -603,309 +575,258 @@ function cropModal(crop, w) {
   });
 }
 
-/* ---------- 收藏集弹层 ---------- */
-function setsModal(workId) {
-  const mine = state.sets;
+/* ============================================================
+   连接(connect)—— Are.na 核心:把块收进频道
+   ============================================================ */
+function connectModal(blockId) {
+  const b = blockById(blockId);
   openModal(`
-    <h3 class="h3">加入收藏集</h3>
-    <p class="modal__sub">Rijksstudio 式自建收藏集——像策展人一样组织你的观看。</p>
-    <div id="setlist">
-      ${mine.length ? mine.map(s => `
-        <div class="setrow ${s.items.includes(workId) ? "is-on" : ""}" data-set="${s.id}">
-          <span class="dot">${I.check}</span><b>${esc(s.name)}</b><span>${s.items.length} 件</span>
-        </div>`).join("") : `<p class="grey small" style="padding:8px 0 14px">还没有收藏集,在下面建一个。</p>`}
+    <h3>连接到频道</h3>
+    <p class="modal__sub">${b ? `「${esc(b.title)}」` : "这个块"}会出现在所选频道里。</p>
+    <div id="chlist">
+      ${state.channels.length ? state.channels.map(c => `
+        <div class="chrow ${c.items.includes(blockId) ? "is-on" : ""}" data-ch="${c.id}">
+          <span class="cb">${I.check}</span><b>${esc(c.name)}</b><span>${c.items.length} 块</span>
+        </div>`).join("") : `<p class="hint" style="padding:6px 0 12px">还没有频道,在下面建一个。</p>`}
     </div>
-    <div class="row" style="margin-top:16px">
-      <input class="textin grow" id="newset-name" placeholder="新收藏集名称,如「夏季山水」" maxlength="24">
-      <button class="btn btn--dark" id="newset-go">新建</button>
+    <div class="row" style="margin-top:14px">
+      <input class="textin grow" id="newch-name" placeholder="新频道名,如「山水的一种看法」" maxlength="24">
+      <button class="mkbtn mkbtn--dark" id="newch-go">新建并连接</button>
     </div>
-    <div class="modal__acts"><button class="btn btn--quiet" id="sets-close">完成</button></div>`)
-  .querySelector("#setlist").addEventListener("click", e => {
-    const row = e.target.closest(".setrow"); if (!row) return;
-    const set = state.sets.find(x => x.id === row.dataset.set);
-    const i = set.items.indexOf(workId);
-    if (i >= 0) set.items.splice(i, 1); else set.items.push(workId);
+    <div class="modal__acts"><button class="mkbtn" id="conn-close">完成</button></div>`);
+  overlayRoot.firstElementChild.querySelector("#chlist").addEventListener("click", e => {
+    const row = e.target.closest(".chrow"); if (!row) return;
+    const ch = state.channels.find(x => x.id === row.dataset.ch);
+    const i = ch.items.indexOf(blockId);
+    if (i >= 0) ch.items.splice(i, 1); else ch.items.push(blockId);
     saveState(); row.classList.toggle("is-on", i < 0);
-    row.querySelector("span:last-child").textContent = set.items.length + " 件";
-    toast(i < 0 ? `${I.check} 已加入「${esc(set.name)}」` : `已移出「${esc(set.name)}」`);
+    row.querySelector("span:last-child").textContent = ch.items.length + " 块";
+    toast(i < 0 ? `已连接「${esc(ch.name)}」` : `已移出「${esc(ch.name)}」`);
   });
   const ovEl = overlayRoot.firstElementChild;
-  ovEl.querySelector("#newset-go").addEventListener("click", () => {
-    const name = ovEl.querySelector("#newset-name").value.trim();
-    if (!name) { toast("先给收藏集起个名字"); return; }
-    const set = { id: uid("set"), name, items: [workId], created: Date.now() };
-    state.sets.unshift(set); saveState();
-    toast(`${I.check} 收藏集「${esc(name)}」已建立`, true);
-    setsModal(workId);
+  ovEl.querySelector("#newch-go").addEventListener("click", () => {
+    const name = ovEl.querySelector("#newch-name").value.trim();
+    if (!name) { toast("先给频道起个名字"); return; }
+    state.channels.unshift({ id: uid("ch"), name, desc: "", items: [blockId], created: Date.now() });
+    saveState(); toast(`频道「${esc(name)}」已建立`);
+    connectModal(blockId);
   });
-  ovEl.querySelector("#sets-close").addEventListener("click", closeModal);
+  ovEl.querySelector("#conn-close").addEventListener("click", closeModal);
 }
 
 /* ============================================================
-   我的 Rijksstudio(Studio)
+   添加块(＋:文字碎片 / 上传照片)
    ============================================================ */
-function viewStudio() {
-  setActiveNav("studio");
-  const tab = current.q.get("tab") || "overview";
-  const p = state.profile;
-  const tabs = [
-    ["overview", "总览"], ["sets", `收藏集${state.sets.length + DEMO_SETS.length}`],
-    ["likes", `收藏作品${state.likes.length}`], ["crops", `细节墙${state.crops.length}`],
-    ["creations", `我的创作${state.creations.length}`],
-  ];
-  const tabUrl = t => `#/studio?tab=${t}`;
+function addModal() {
+  const ov = openModal(`
+    <h3>添加一个块</h3>
+    <p class="modal__sub">碎片是档案的最小单位——一句话、一张观展照片,都算。</p>
+    <div class="seg">
+      <button type="button" class="is-on" data-at="text">写一条碎片</button>
+      <button type="button" data-at="img">上传照片</button>
+    </div>
+    <div id="add-text">
+      <textarea class="textin" id="frag-text" placeholder="今天在展厅里记住的一句话、一个瞬间…" maxlength="500"></textarea>
+    </div>
+    <div id="add-img" class="hidden">
+      <div class="empty" style="padding:28px 18px" id="upzone" role="button" tabindex="0">
+        <h3 style="font-size:var(--fs3)">选择或拖入观展照片</h3>
+        <p class="hint">自动读取拍摄时间(EXIF)并按主色归入色系 · 仅存本机</p>
+        <input type="file" id="frag-file" accept="image/*" multiple hidden>
+      </div>
+    </div>
+    <div class="modal__acts">
+      <button class="mkbtn" id="add-close">取消</button>
+      <button class="mkbtn mkbtn--dark" id="add-ok">加入档案</button>
+    </div>`);
+  ov.querySelectorAll(".seg button").forEach(btn => btn.addEventListener("click", () => {
+    ov.querySelectorAll(".seg button").forEach(x => x.classList.remove("is-on"));
+    btn.classList.add("is-on");
+    ov.querySelector("#add-text").classList.toggle("hidden", btn.dataset.at !== "text");
+    ov.querySelector("#add-img").classList.toggle("hidden", btn.dataset.at !== "img");
+  }));
+  const zone = ov.querySelector("#upzone"), file = ov.querySelector("#frag-file");
+  zone.addEventListener("click", () => file.click());
+  zone.addEventListener("keydown", e => { if (e.key === "Enter") file.click(); });
+  ["dragover", "dragenter"].forEach(ev => zone.addEventListener(ev, e => e.preventDefault()));
+  zone.addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files.length) { closeModal(); ingestFiles(e.dataTransfer.files); } });
+  file.addEventListener("change", () => { if (file.files.length) { closeModal(); ingestFiles(file.files); } });
+  ov.querySelector("#add-ok").addEventListener("click", () => {
+    const t = ov.querySelector("#frag-text").value.trim();
+    if (!t) { toast("写点什么再保存"); return; }
+    state.texts.unshift({ id: uid("txt"), text: t, created: Date.now() });
+    saveState(); closeModal(); toast("碎片已入档案");
+    render();
+  });
+  ov.querySelector("#add-close").addEventListener("click", closeModal);
+}
 
+async function ingestFiles(files) {
+  let n = 0;
+  for (const f of files) {
+    if (!f.type.startsWith("image/")) continue;
+    try { await ingestPhoto(f); n++; } catch {}
+  }
+  if (n) { toast(`已收录 ${n} 张照片`); render(); }
+  else toast("未能读取图片");
+}
+
+/* ============================================================
+   频道
+   ============================================================ */
+const DEMO_CHANNELS = [
+  { id: "demo:1", name: "夏季山水", author: "再观编辑部", date: "2026-08-12", items: ["kb:0", "kb:4", "kb:2", "kb:8"], desc: "看山看水,过一个清凉的夏天。" },
+  { id: "demo:2", name: "青铜之魂", author: "再观编辑部", date: "2026-07-30", items: ["kb:11", "kb:12", "kb:13", "kb:14", "kb:15", "kb:25"], desc: "狞厉与浪漫并存的礼器时代。" },
+  { id: "demo:3", name: "金色黄昏", author: "再观编辑部", date: "2026-06-18", items: ["kb:16", "kb:17", "kb:22", "kb:5"], desc: "一切与金子有关的光。" },
+];
+
+function channelCover(ch, n = 4) {
+  const blocks = ch.items.map(blockById).filter(b => b && b.img).slice(0, n);
+  return blocks.map(b => `<img src="${b.img()}" alt="" loading="lazy">`).join("");
+}
+
+function viewChannels() {
+  setActiveNav("channels");
   view.innerHTML = `
-  <section class="studiohead">
-    <div class="container studiohead__row">
-      <div class="avatar">${esc((p.name || "观")[0])}</div>
-      <div>
-        <h1 class="h-display h2">${esc(p.name)} 的 Rijksstudio</h1>
-        <div class="studiohead__sub">收藏 · 裁剪 · 再创作 —— 你的观看档案</div>
-      </div>
-      <div class="statgrid">
-        <div class="stat"><b><a href="${tabUrl("likes")}">${state.likes.length}</a></b><span>收藏</span></div>
-        <div class="stat"><b><a href="${tabUrl("crops")}">${state.crops.length}</a></b><span>细节</span></div>
-        <div class="stat"><b><a href="${tabUrl("sets")}">${state.sets.length}</a></b><span>收藏集</span></div>
-        <div class="stat"><b><a href="${tabUrl("creations")}">${state.creations.length}</a></b><span>创作</span></div>
-      </div>
-    </div>
-  </section>
   <div class="container page">
-    <div class="tabs">
-      ${tabs.map(([k, lbl]) => `<a class="tabbtn ${tab === k ? "is-on" : ""}" href="${tabUrl(k)}">${lbl}</a>`).join("")}
-    </div>
-    <div id="studio-body">${studioTab(tab)}</div>
-  </div>`;
-}
-
-function studioTab(tab) {
-  if (tab === "sets") {
-    const cards = [
-      `<a class="setcard" href="javascript:void 0" id="newset-card"><div class="setcard__plus">＋ 新建收藏集</div><div class="setcard__name">新建收藏集</div><div class="setcard__meta">把相关的藏品组织在一起</div></a>`,
-      ...state.sets.map(s => `
-        <a class="setcard" href="#/set/${encodeURIComponent(s.id)}">
-          <div class="setcard__cover">${s.items.length ? setCoverImgs(s.items, 2) : `<div class="setcard__plus" style="position:static;display:grid">空收藏集</div>`}</div>
-          <div class="setcard__name">${esc(s.name)}</div>
-          <div class="setcard__meta">${s.items.length} 件 · ${fmtDate(s.created)}</div>
-        </a>`),
-      ...DEMO_SETS.map(s => `
-        <a class="setcard" href="#/set/${encodeURIComponent(s.id)}">
-          <div class="setcard__cover">${setCoverImgs(s.items, 2)}</div>
-          <div class="setcard__name">${esc(s.name)} <span class="wcard__tag" style="position:static;margin-left:6px;background:var(--grey)">示例</span></div>
-          <div class="setcard__meta">${s.items.length} 件 · 官方示例</div>
-        </a>`),
-    ];
-    return `<div class="masonry" style="columns:3 260px">${cards.join("")}</div>`;
-  }
-  if (tab === "likes") {
-    const works = state.likes.map(workById).filter(Boolean);
-    return works.length
-      ? `<div class="masonry">${works.map(workCard).join("")}</div>`
-      : emptyBox("还没有收藏", "去馆藏里,点亮卡片右上角的爱心。", "#/collection", "进入馆藏");
-  }
-  if (tab === "crops") {
-    return state.crops.length
-      ? `<div class="masonry">${state.crops.map(cropCard).join("")}</div>`
-      : emptyBox("细节墙还是空的", "打开一件作品,放大,裁下最打动你的局部。", "#/collection", "去裁剪第一个细节");
-  }
-  if (tab === "creations") {
-    return state.creations.length
-      ? `<div class="masonry" style="columns:3 260px">${state.creations.map(creationCard).join("")}</div>`
-      : emptyBox("还没有创作", "把细节和藏品拖上画布,完成你的第一次再创作。", "#/make", "去创作");
-  }
-  /* overview */
-  const recentCrops = state.crops.slice(0, 4);
-  const recentLikes = state.likes.map(workById).filter(Boolean).slice(0, 4);
-  return `
-  <div class="row" style="margin-bottom:18px">
-    <a class="btn btn--primary" href="#/collection">去馆藏逛逛</a>
-    <a class="btn btn--ghost" href="#/make">${I.plus} 开始一次创作</a>
-  </div>
-  ${recentCrops.length ? `
-    <div class="section-head mt-0"><div><div class="kicker">最近裁剪</div><h2 class="h-display h2" style="font-size:1.25rem">细节墙</h2></div><a class="link" href="${"#/studio?tab=crops"}"><span>全部 →</span></a></div>
-    <div class="masonry" style="columns:4 220px;margin-bottom:10px">${recentCrops.map(cropCard).join("")}</div>` : ""}
-  ${recentLikes.length ? `
-    <div class="section-head"><div><div class="kicker">最近收藏</div><h2 class="h-display h2" style="font-size:1.25rem">心动的作品</h2></div><a class="link" href="#/studio?tab=likes"><span>全部 →</span></a></div>
-    <div class="masonry" style="columns:4 220px">${recentLikes.map(workCard).join("")}</div>` : ""}`;
-}
-
-function emptyBox(title, sub, href, btn) {
-  return `<div class="emptybox"><h3 class="h3">${title}</h3><p>${sub}</p><a class="btn btn--ghost" href="${href}">${btn}</a></div>`;
-}
-
-function cropCard(c) {
-  const w = workById(c.work);
-  return `
-  <div class="ccard">
-    <img src="${c.data}" alt="细节" loading="lazy">
-    <div class="ccard__acts">
-      <button title="去创作" data-crop-make="${c.id}">${I.plus}</button>
-      <button title="编辑注释" data-crop-edit="${c.id}">${I.edit}</button>
-      <button title="删除" data-crop-del="${c.id}">${I.trash}</button>
-    </div>
-    <div class="ccard__body">
-      <div class="ccard__note">${c.note ? esc(c.note) : '<span class="grey">未写注释</span>'}</div>
-      ${w ? `<a class="ccard__src" href="#/work/${encodeURIComponent(w.id)}">自 <b>${esc(w.name)}</b> · ${esc(w.artist)}</a>` : ""}
+    <div class="pagehead"><h1>频道</h1><span class="sub">像策展人一样,把块组织成你自己的线索</span></div>
+    <div class="chgrid" style="margin-bottom:34px">
+      <a class="chcard--new" href="javascript:void 0" id="newch-card">＋ 新建频道</a>
+      ${state.channels.map(ch => `
+      <a class="chcard" href="#/channel/${encodeURIComponent(ch.id)}">
+        <div class="chcard__cover">${ch.items.length ? channelCover(ch, 2) : ""}</div>
+        <div class="chcard__name">${esc(ch.name)}</div>
+        <div class="chcard__m">${ch.items.length} 块 · ${fmtDate(ch.created)}</div>
+      </a>`).join("")}
+      ${DEMO_CHANNELS.map(ch => `
+      <a class="chcard" href="#/channel/${encodeURIComponent(ch.id)}">
+        <div class="chcard__cover">${channelCover(ch, 2)}</div>
+        <div class="chcard__name">${esc(ch.name)} <span class="vis vis--pub" style="margin-left:4px">示例</span></div>
+        <div class="chcard__m">${ch.items.length} 块 · 官方示例</div>
+      </a>`).join("")}
     </div>
   </div>`;
-}
-
-function creationCard(cr) {
-  return `
-  <div class="ccard creation-card">
-    <img src="${cr.data}" alt="${esc(cr.title)}" loading="lazy">
-    <div class="ccard__acts">
-      <button title="下载" data-cr-dl="${cr.id}">${I.down}</button>
-      <button title="重命名" data-cr-edit="${cr.id}">${I.edit}</button>
-      <button title="删除" data-cr-del="${cr.id}">${I.trash}</button>
-    </div>
-    <div class="ccard__body">
-      <div class="ccard__note"><b>${esc(cr.title)}</b></div>
-      <div class="ccard__src">${fmtDate(cr.created)}</div>
-    </div>
-  </div>`;
-}
-
-/* 细节墙 / 创作的操作 */
-view.addEventListener("click", e => {
-  const mk = e.target.closest("[data-crop-make]");
-  if (mk) {
-    const c = state.crops.find(x => x.id === mk.dataset.cropMake);
-    if (c) { makeStash = [{ src: c.data, ar: c.ar }]; location.hash = "#/make"; }
-    return;
-  }
-  const ed = e.target.closest("[data-crop-edit]");
-  if (ed) {
-    const c = state.crops.find(x => x.id === ed.dataset.cropEdit);
-    if (c) {
-      const ov = openModal(`
-        <h3 class="h3">编辑细节注释</h3>
-        <img src="${c.data}" style="width:100%;border:1px solid var(--line);border-radius:2px;margin:12px 0" alt="">
-        <input class="textin" id="crop-note2" value="${esc(c.note)}" placeholder="一句注…" maxlength="60">
-        <div class="modal__acts">
-          <button class="btn btn--quiet" id="cn-del" style="margin-right:auto;color:var(--accent)">${I.trash} 删除细节</button>
-          <button class="btn btn--primary" id="cn-ok">保存</button>
-        </div>`);
-      ov.querySelector("#cn-ok").addEventListener("click", () => {
-        c.note = ov.querySelector("#crop-note2").value.trim();
-        saveState(); closeModal(); render(); toast("注释已保存");
-      });
-      ov.querySelector("#cn-del").addEventListener("click", () => {
-        state.crops = state.crops.filter(x => x.id !== c.id);
-        saveState(); closeModal(); render(); toast("细节已删除");
-      });
-    }
-    return;
-  }
-  const del = e.target.closest("[data-crop-del]");
-  if (del) {
-    state.crops = state.crops.filter(x => x.id !== del.dataset.cropDel);
-    saveState(); render(); toast("细节已删除");
-    return;
-  }
-  const dl = e.target.closest("[data-cr-dl]");
-  if (dl) {
-    const cr = state.creations.find(x => x.id === dl.dataset.crDl);
-    if (cr) downloadDataUrl(cr.data, `${cr.title}-再观创作.png`);
-    return;
-  }
-  const ce = e.target.closest("[data-cr-edit]");
-  if (ce) {
-    const cr = state.creations.find(x => x.id === ce.dataset.crEdit);
-    if (cr) {
-      const name = prompt("创作标题", cr.title);
-      if (name && name.trim()) { cr.title = name.trim(); saveState(); render(); }
-    }
-    return;
-  }
-  const cd = e.target.closest("[data-cr-del]");
-  if (cd) {
-    if (confirm("删除这个创作?")) {
-      state.creations = state.creations.filter(x => x.id !== cd.dataset.crDel);
-      saveState(); render(); toast("创作已删除");
-    }
-    return;
-  }
-  const ns = e.target.closest("#newset-card");
-  if (ns) {
-    const name = prompt("收藏集名称", "");
+  document.getElementById("newch-card").addEventListener("click", () => {
+    const name = prompt("频道名", "");
     if (name && name.trim()) {
-      state.sets.unshift({ id: uid("set"), name: name.trim(), items: [], created: Date.now() });
-      saveState(); render(); toast(`${I.check} 收藏集已建立`, true);
+      state.channels.unshift({ id: uid("ch"), name: name.trim(), desc: "", items: [], created: Date.now() });
+      saveState(); toast("频道已建立"); render();
     }
-  }
-});
-
-/* ============================================================
-   收藏集详情
-   ============================================================ */
-function viewSet(id) {
-  setActiveNav("studio");
-  const isDemo = id.startsWith("demo:");
-  const set = isDemo ? DEMO_SETS.find(s => s.id === id) : state.sets.find(s => s.id === id);
-  if (!set) { view.innerHTML = emptyBox("收藏集不存在", "", "#/studio?tab=sets", "返回收藏集"); return; }
-  const works = set.items.map(workById).filter(Boolean);
-
-  view.innerHTML = `
-  <div class="container page">
-    <div class="crumbs"><a href="#/studio">我的 Rijksstudio</a> / <a href="#/studio?tab=sets">收藏集</a> / ${esc(set.name)}</div>
-    <div class="row spread" style="margin-bottom:6px">
-      <div>
-        <h1 class="h-display h2">${esc(set.name)}</h1>
-        <div class="small grey" style="margin-top:6px">${works.length} 件作品 · ${isDemo ? "官方示例 · " + set.date : fmtDate(set.created)}${isDemo ? "" : " · 我的收藏集"}</div>
-      </div>
-      <div class="row">
-        ${isDemo ? `<button class="btn btn--ghost btn--sm" id="copy-set">${I.copy} 复制为我的收藏集</button>` : `
-          <button class="btn btn--quiet btn--sm" id="rename-set">${I.edit} 重命名</button>
-          <button class="btn btn--quiet btn--sm" id="del-set" style="color:var(--accent)">${I.trash} 删除收藏集</button>`}
-      </div>
-    </div>
-    ${works.length
-      ? `<div class="masonry">${works.map(w => workCard(w).replace("</a>", `
-          <button class="ccard__acts" style="position:absolute;top:8px;left:8px;opacity:0" data-rmfrom="${esc(w.id)}" title="移出收藏集">${I.x}</button></a>`)).join("")}</div>`
-      : emptyBox("收藏集还是空的", "去馆藏里,用作品页的「加入收藏集」把它填满。", "#/collection", "进入馆藏")}
-  </div>`;
-
-  document.getElementById("copy-set")?.addEventListener("click", () => {
-    state.sets.unshift({ id: uid("set"), name: set.name + "(副本)", items: [...set.items], created: Date.now() });
-    saveState(); toast(`${I.check} 已复制为我的收藏集`, true);
-    location.hash = "#/studio?tab=sets";
-  });
-  document.getElementById("rename-set")?.addEventListener("click", () => {
-    const name = prompt("收藏集名称", set.name);
-    if (name && name.trim()) { set.name = name.trim(); saveState(); render(); }
-  });
-  document.getElementById("del-set")?.addEventListener("click", () => {
-    if (confirm(`删除收藏集「${set.name}」?作品本身不受影响。`)) {
-      state.sets = state.sets.filter(s => s.id !== id);
-      saveState(); toast("收藏集已删除");
-      location.hash = "#/studio?tab=sets";
-    }
-  });
-  view.querySelectorAll("[data-rmfrom]").forEach(btn => {
-    btn.addEventListener("click", e => {
-      e.preventDefault(); e.stopPropagation();
-      set.items = set.items.filter(x => x !== btn.dataset.rmfrom);
-      saveState(); render(); toast("已移出收藏集");
-    });
   });
 }
 
+function viewChannel(id) {
+  setActiveNav("channels");
+  const isDemo = id.startsWith("demo:");
+  const ch = isDemo ? DEMO_CHANNELS.find(c => c.id === id) : state.channels.find(c => c.id === id);
+  if (!ch) { view.innerHTML = `<div class="container page empty"><h3>频道不存在</h3><a class="lnk" href="#/channels">返回频道</a></div>`; return; }
+  const blocks = ch.items.map(blockById).filter(Boolean);
+  const mine = allBlocks().filter(b => !ch.items.includes(b.id));
+
+  view.innerHTML = `
+  <div class="container page">
+    <div class="chanhead">
+      <div>
+        <h1>${esc(ch.name)}</h1>
+        <div class="chanhead__meta">${blocks.length} 块 · ${isDemo ? "官方示例 · " + ch.date : "我的频道"}</div>
+      </div>
+      <div class="chanhead__acts">
+        ${isDemo ? `<button class="mkbtn" id="ch-copy">${I.copy} 复制为我的频道</button>` : `
+          <button class="mkbtn" id="ch-edit">${I.edit} 重命名 / 描述</button>
+          <button class="mkbtn" id="ch-del" style="color:var(--red)">${I.trash} 删除频道</button>`}
+      </div>
+    </div>
+    ${ch.desc ? `<p class="chandesc">${esc(ch.desc)}</p>` : ""}
+    ${blocks.length ? `<div class="masonry">${blocks.map(b => blockCard(b).replace("</a>",
+      `<button class="bact" style="position:absolute;left:8px;top:8px;opacity:0" data-rmch="${esc(b.id)}" title="移出频道">${I.x}</button></a>`)).join("")}</div>`
+      : `<div class="empty"><h3>频道还是空的</h3><p>在任意块上点「＋」即可连接到这个频道。</p><a class="lnk" href="#/">去探索</a></div>`}
+
+    ${!isDemo && mine.length ? `
+    <div class="pagehead" style="margin-top:45px"><h1 style="font-size:var(--fs4)">添加块</h1><span class="sub">点 ＋ 连接进本频道</span></div>
+    <div class="masonry" id="addgrid">${mine.slice(0, 12).map(b => blockCard(b).replace("</a>",
+      `<button class="bact" style="position:absolute;left:8px;top:8px;opacity:0" data-addch="${esc(b.id)}" title="连接进本频道">${I.plus}</button></a>`)).join("")}</div>` : ""}
+  </div>`;
+
+  document.getElementById("ch-copy")?.addEventListener("click", () => {
+    state.channels.unshift({ id: uid("ch"), name: ch.name + "(副本)", desc: ch.desc, items: [...ch.items], created: Date.now() });
+    saveState(); toast("已复制为我的频道");
+    location.hash = "#/channels";
+  });
+  document.getElementById("ch-edit")?.addEventListener("click", () => {
+    const name = prompt("频道名", ch.name);
+    if (name === null) return;
+    const desc = prompt("频道描述(可留空)", ch.desc || "");
+    if (name.trim()) { ch.name = name.trim(); ch.desc = (desc || "").trim(); saveState(); render(); }
+  });
+  document.getElementById("ch-del")?.addEventListener("click", () => {
+    if (confirm(`删除频道「${ch.name}」?块本身不受影响。`)) {
+      state.channels = state.channels.filter(c => c.id !== id);
+      saveState(); toast("频道已删除");
+      location.hash = "#/channels";
+    }
+  });
+  view.querySelectorAll("[data-rmch]").forEach(btn => btn.addEventListener("click", e => {
+    e.preventDefault(); e.stopPropagation();
+    ch.items = ch.items.filter(x => x !== btn.dataset.rmch);
+    saveState(); render(); toast("已移出频道");
+  }));
+  view.querySelectorAll("[data-addch]").forEach(btn => btn.addEventListener("click", e => {
+    e.preventDefault(); e.stopPropagation();
+    ch.items.push(btn.dataset.addch);
+    saveState(); render(); toast("已连接进频道");
+  }));
+}
+
 /* ============================================================
-   创作 Make(拼贴编辑器)
+   我的档案
    ============================================================ */
-let makeStash = null; // 从细节墙带来的初始素材
+function viewMe() {
+  setActiveNav("me");
+  const p = state.profile;
+  const mine = allBlocks().filter(b => b.kind !== "kb");
+  const tab = current.q.get("tab") || "all";
+  const kinds = [["all", `全部${mine.length}`], ["photo", `照片${state.photos.length}`], ["crop", `细节${state.crops.length}`], ["text", `碎片${state.texts.length}`], ["creation", `创作${state.creations.length}`], ["like", `收藏${state.likes.length}`]];
+  const list = tab === "all" ? mine : tab === "like" ? state.likes.map(blockById).filter(Boolean) : mine.filter(b => b.kind === tab);
+
+  view.innerHTML = `
+  <div class="container page">
+    <div class="mehead">
+      <div class="mehead__av">${esc((p.name || "观")[0])}</div>
+      <div>
+        <h1>${esc(p.name)} 的档案</h1>
+        <div class="sub">碎片 · 细节 · 频道 —— 你的观看档案</div>
+      </div>
+      <div class="mestats">
+        <div class="mestat"><b>${state.channels.length}</b><span>频道</span></div>
+        <div class="mestat"><b>${mine.length}</b><span>我的块</span></div>
+        <div class="mestat"><b>${state.likes.length}</b><span>收藏</span></div>
+      </div>
+    </div>
+    <div class="toolrow">
+      <div class="chips">
+        ${kinds.map(([k, lbl]) => `<a class="chip ${tab === k ? "is-on" : ""}" href="#/me?tab=${k}">${lbl}</a>`).join("")}
+      </div>
+      <span class="count">数据仅存本机 · 设置页可导出</span>
+    </div>
+    ${list.length ? `<div class="masonry">${list.map(blockCard).join("")}</div>`
+      : `<div class="empty"><h3>这里还是空的</h3><p>点右上角「＋」写下第一条碎片,或上传一张观展照片。</p></div>`}
+  </div>`;
+}
+
+/* ============================================================
+   创作 Make(拼贴画布)
+   ============================================================ */
+let makeStash = null, makeStashText = null;
 const MAKE_W = 680, MAKE_H = 906;
-const MAKE_BG = ["#FFFFFF", "#F5F0E3", "#EAEAEA", "#C2CCCE", "#CC4C28", "#436178", "#5E99B0", "#AAA04D", "#202327", "#52755C"];
-const TEXT_COLORS = ["#202327", "#FFFFFF", "#CC4C28", "#436178", "#AAA04D"];
+const MAKE_BG = ["#FFFFFF", "#F7F7F7", "#EDEDED", "#DEDEDE", "#333333", "#16171E", "#3D46C2", "#A87253", "#B93D3D", "#238020"];
+const TEXT_COLORS = ["#000000", "#FFFFFF", "#3D46C2", "#B93D3D", "#696969"];
+
+let makeState = null;
+function selEl() { return makeState.els.find(e => e.id === makeState.sel); }
 
 function viewMake() {
   setActiveNav("make");
-  if (!view.dataset.makeInit) {
-    view.dataset.makeInit = "1";
-  }
-  if (!makeState || makeState.expired) makeState = { els: [], sel: null, bg: "#FFFFFF", zTop: 1, expired: false };
+  if (!makeState) makeState = { els: [], sel: null, bg: "#FFFFFF", zTop: 1 };
   if (makeStash) {
     makeStash.forEach(s => makeState.els.push({
       id: uid("el"), type: "img", src: s.src, ar: s.ar || 1,
@@ -913,52 +834,52 @@ function viewMake() {
     }));
     makeStash = null;
   }
+  if (makeStashText) {
+    makeState.els.push({ id: uid("el"), type: "text", text: makeStashText, size: 40, color: "#000000", x: MAKE_W * 0.16, y: MAKE_H * 0.42, w: MAKE_W * 0.68, h: 60, rot: 0, z: ++makeState.zTop });
+    makeStashText = null;
+  }
 
   view.innerHTML = `
   <div class="container page">
-    <div class="section-head mt-0" style="margin-top:26px">
-      <div><div class="kicker">Make</div><h1 class="h-display h2">创作 · 用藏品再创作</h1></div>
-    </div>
+    <div class="pagehead"><h1>创作</h1><span class="sub">把块拖上画布,导出属于你的拼贴</span></div>
     <div class="make">
       <div class="makestage-wrap">
         <div class="makebar">
-          <span class="filterbar__label">底色</span>
-          <div class="bgpick">
-            ${MAKE_BG.map(c => `<button class="swatch ${makeState.bg === c ? "is-on" : ""}" data-bg="${c}" style="background:${c}" title="${c}"></button>`).join("")}
+          <div class="bgrow">
+            ${MAKE_BG.map(c => `<button class="dot ${makeState.bg === c ? "is-on" : ""}" data-bg="${c}" style="background:${c}"></button>`).join("")}
           </div>
-          <span class="spacer"></span>
-          <button class="btn btn--quiet btn--sm" id="mk-text">${I.edit} 添加文字</button>
-          <button class="btn btn--quiet btn--sm" id="mk-export">${I.down} 导出 / 保存</button>
+          <span class="gap"></span>
+          <button class="mkbtn" id="mk-text">${I.edit} 加文字</button>
+          <button class="mkbtn mkbtn--dark" id="mk-export">${I.down} 导出 / 保存</button>
         </div>
         <div class="makestage" id="mk-stage">
           <div id="mk-inner" style="position:absolute;left:0;top:0;width:${MAKE_W}px;height:${MAKE_H}px;transform-origin:0 0"></div>
         </div>
-        <div class="elbar" id="mk-elbar">
-          <button class="btn btn--quiet btn--sm" id="el-up" title="图层上移">${I.layers} 上移</button>
-          <button class="btn btn--quiet btn--sm" id="el-down" title="图层下移">${I.layers} 下移</button>
-          <button class="btn btn--quiet btn--sm" id="el-copy">${I.copy} 复制</button>
-          <button class="btn btn--quiet btn--sm" id="el-del" style="color:var(--accent)">${I.trash} 删除选中</button>
-          <button class="btn btn--quiet btn--sm" id="el-clear" style="color:var(--accent)">${I.x} 清空画布</button>
+        <div class="elbar">
+          <button class="mkbtn" id="el-up">${I.layers} 上移</button>
+          <button class="mkbtn" id="el-down">${I.layers} 下移</button>
+          <button class="mkbtn" id="el-copy">${I.copy} 复制</button>
+          <button class="mkbtn" id="el-del" style="color:var(--red)">${I.trash} 删除选中</button>
+          <button class="mkbtn" id="el-clear" style="color:var(--red)">${I.x} 清空</button>
         </div>
         <div class="textpanel" id="mk-textpanel">
           <label>文字内容</label>
-          <textarea id="tp-text" placeholder="想说的话…"></textarea>
-          <label>字号</label>
-          <div class="row"><input type="range" id="tp-size" min="18" max="120" value="44" style="flex:1"><span id="tp-sizev" class="small">44</span></div>
+          <textarea id="tp-text"></textarea>
+          <label>字号 <span id="tp-sizev" class="grey"></span></label>
+          <input type="range" id="tp-size" min="18" max="120" value="44">
           <label>颜色</label>
-          <div class="swatches">${TEXT_COLORS.map(c => `<button class="swatch" data-tc="${c}" style="background:${c}"></button>`).join("")}</div>
+          <div class="tcolors">${TEXT_COLORS.map(c => `<button class="dot" data-tc="${c}" style="background:${c}"></button>`).join("")}</div>
         </div>
       </div>
-
       <aside class="drawer">
         <div class="drawer__tabs">
-          <button class="tabbtn is-on" data-dt="crops">细节</button>
-          <button class="tabbtn" data-dt="likes">收藏</button>
-          <button class="tabbtn" data-dt="kb">馆藏</button>
-          <button class="tabbtn" data-dt="photos">照片</button>
+          <button class="is-on" data-dt="crops">细节</button>
+          <button data-dt="kb">馆藏</button>
+          <button data-dt="photos">照片</button>
+          <button data-dt="texts">碎片</button>
         </div>
         <div class="drawer__grid" id="mk-drawer"></div>
-        <div class="drawer__hint">点按素材加入画布 · 拖动摆放 · 四角缩放 · 顶部圆点旋转</div>
+        <div class="drawer__hint">点素材加入画布 · 拖动摆放 · 右下角缩放 · 顶部圆点旋转</div>
       </aside>
     </div>
   </div>`;
@@ -977,22 +898,22 @@ function viewMake() {
       b.classList.add("is-on");
       renderDrawer(b.dataset.dt);
     }));
-
-  document.querySelectorAll(".bgpick [data-bg]").forEach(b =>
+  document.querySelectorAll(".bgrow [data-bg]").forEach(b =>
     b.addEventListener("click", () => {
       makeState.bg = b.dataset.bg;
-      document.querySelectorAll(".bgpick [data-bg]").forEach(x => x.classList.toggle("is-on", x.dataset.bg === makeState.bg));
+      document.querySelectorAll(".bgrow [data-bg]").forEach(x => x.classList.toggle("is-on", x.dataset.bg === makeState.bg));
       renderMakeStage();
     }));
-
   document.getElementById("mk-text").addEventListener("click", () => {
-    const el = { id: uid("el"), type: "text", text: "再观", size: 44, color: "#202327", x: MAKE_W * 0.2, y: MAKE_H * 0.4, w: MAKE_W * 0.6, h: 60, rot: 0, z: ++makeState.zTop };
+    const el = { id: uid("el"), type: "text", text: "再观", size: 44, color: "#000000", x: MAKE_W * 0.2, y: MAKE_H * 0.4, w: MAKE_W * 0.6, h: 60, rot: 0, z: ++makeState.zTop };
     makeState.els.push(el); makeState.sel = el.id;
     renderMakeStage(); openTextPanel(el);
   });
   document.getElementById("mk-export").addEventListener("click", exportMake);
-
-  document.getElementById("el-del").addEventListener("click", () => { delSel(); });
+  document.getElementById("el-del").addEventListener("click", () => {
+    makeState.els = makeState.els.filter(e => e.id !== makeState.sel);
+    makeState.sel = null; renderMakeStage();
+  });
   document.getElementById("el-copy").addEventListener("click", () => {
     const el = selEl(); if (!el) return;
     const c = { ...el, id: uid("el"), x: el.x + 24, y: el.y + 24, z: ++makeState.zTop };
@@ -1001,18 +922,11 @@ function viewMake() {
   document.getElementById("el-clear").addEventListener("click", () => {
     if (!makeState.els.length || confirm("清空画布?")) { makeState.els = []; makeState.sel = null; renderMakeStage(); }
   });
-  document.getElementById("el-up").addEventListener("click", () => { moveLayer(+1); });
-  document.getElementById("el-down").addEventListener("click", () => { moveLayer(-1); });
-
+  document.getElementById("el-up").addEventListener("click", () => moveLayer(1));
+  document.getElementById("el-down").addEventListener("click", () => moveLayer(-1));
   document.addEventListener("keydown", makeKeydown);
 }
 
-let makeState = null;
-function selEl() { return makeState.els.find(e => e.id === makeState.sel); }
-function delSel() {
-  makeState.els = makeState.els.filter(e => e.id !== makeState.sel);
-  makeState.sel = null; renderMakeStage();
-}
 function moveLayer(d) {
   const el = selEl(); if (!el) return;
   el.z += d * 1.5; if (d > 0) el.z = Math.max(el.z, ++makeState.zTop);
@@ -1021,37 +935,44 @@ function moveLayer(d) {
 function makeKeydown(e) {
   if (!location.hash.startsWith("#/make")) { document.removeEventListener("keydown", makeKeydown); return; }
   if (e.target.matches("input, textarea")) return;
-  if (e.key === "Delete" || e.key === "Backspace") { if (makeState.sel) { e.preventDefault(); delSel(); } }
+  if ((e.key === "Delete" || e.key === "Backspace") && makeState.sel) {
+    e.preventDefault();
+    makeState.els = makeState.els.filter(x => x.id !== makeState.sel);
+    makeState.sel = null; renderMakeStage();
+  }
   if (e.key === "Escape") { makeState.sel = null; renderMakeStage(); }
 }
 
 function renderDrawer(tab) {
   const grid = document.getElementById("mk-drawer");
   let items = [];
-  if (tab === "crops") items = state.crops.map(c => ({ src: c.data, ar: c.ar, title: c.note || "细节" }));
-  if (tab === "likes") items = state.likes.map(workById).filter(Boolean).map(w => ({ src: workImage(w, 480), ar: w.ar, title: w.name }));
-  if (tab === "kb") items = KB.map(w => ({ src: workImage(w, 480), ar: w.ar, title: w.name }));
-  if (tab === "photos") items = state.photos.map(w => ({ src: workImage(w, 480), ar: w.ar, title: w.name }));
-  grid.innerHTML = items.length
-    ? items.map((it, i) => `<div class="drawer__item" data-add="${tab}:${i}" title="${esc(it.title)}"><img src="${it.src}" alt="" loading="lazy"></div>`).join("")
-    : `<p class="grey small" style="grid-column:1/-1;padding:8px 2px">这里还没有素材。</p>`;
-  grid.querySelectorAll("[data-add]").forEach(d =>
-    d.addEventListener("click", () => {
-      const [t, i] = d.dataset.add.split(":");
-      const it = t === "crops" ? state.crops[+i] : t === "likes" ? workById(state.likes[+i]) : t === "kb" ? KB[+i] : state.photos[+i];
-      if (!it) return;
+  if (tab === "crops") items = state.crops.map(c => ({ kind: "crop", id: c.id, src: c.data, ar: c.ar, title: c.note || "细节" }));
+  if (tab === "kb") items = KB.map(w => ({ kind: "kb", id: w.id, src: workImage(w, 480), ar: w.ar, title: w.name }));
+  if (tab === "photos") items = state.photos.map(w => ({ kind: "photo", id: w.id, src: workImage(w, 480), ar: w.ar, title: w.name }));
+  if (tab === "texts") items = state.texts.map(t => ({ kind: "text", id: t.id, text: t.text }));
+  grid.innerHTML = items.length ? items.map((it, i) => {
+    if (it.kind === "text") return `<div class="ditem ditem--text" data-add2="${tab}:${i}">${esc(it.text.slice(0, 40))}…</div>`;
+    return `<div class="ditem" data-add2="${tab}:${i}" title="${esc(it.title)}"><img src="${it.src}" alt="" loading="lazy"></div>`;
+  }).join("") : `<p class="hint" style="grid-column:1/-1;padding:6px 2px">这里还没有素材。</p>`;
+  grid.querySelectorAll("[data-add2]").forEach(d => d.addEventListener("click", () => {
+    const [t, i] = d.dataset.add2.split(":");
+    if (t === "texts") {
+      const tx = state.texts[+i];
+      makeState.els.push({ id: uid("el"), type: "text", text: tx.text.slice(0, 80), size: 36, color: "#000000", x: MAKE_W * 0.15, y: MAKE_H * 0.4, w: MAKE_W * 0.7, h: 60, rot: 0, z: ++makeState.zTop });
+    } else {
+      const it = t === "crops" ? state.crops[+i] : t === "kb" ? KB[+i] : state.photos[+i];
       const src = t === "crops" ? it.data : workImage(it, 480);
       const ar = it.ar || 1;
       const w = MAKE_W * 0.46, h = w / Math.max(0.4, Math.min(3.4, ar));
       makeState.els.push({ id: uid("el"), type: "img", src, ar, x: (MAKE_W - w) / 2, y: (MAKE_H - h) / 2, w, h, rot: 0, z: ++makeState.zTop });
-      renderMakeStage();
-    }));
+    }
+    renderMakeStage();
+  }));
 }
 
 let stageScale = 1;
 function renderMakeStage() {
-  const outer = document.getElementById("mk-stage");
-  const inner = document.getElementById("mk-inner");
+  const outer = document.getElementById("mk-stage"), inner = document.getElementById("mk-inner");
   if (!outer || !inner) return;
   stageScale = outer.clientWidth / MAKE_W;
   inner.style.transform = `scale(${stageScale})`;
@@ -1059,13 +980,16 @@ function renderMakeStage() {
   const sorted = [...makeState.els].sort((a, b) => a.z - b.z);
   inner.innerHTML = sorted.map(el => {
     if (el.type === "img") {
-      return `<div class="el ${el.id === makeState.sel ? "is-sel" : ""}" data-el="${el.id}" style="left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;transform:rotate(${el.rot}rad)">
-        <img class="el-img" src="${el.src}" alt="" draggable="false">
+      return `<div class="el ${el.id === makeState.sel ? "is-sel" : ""}" data-el="${el.id}"
+        style="left:${el.x}px;top:${el.y}px;transform:rotate(${el.rot}rad)">
+        <img class="el-img" src="${el.src}" alt="" draggable="false" style="width:${el.w}px;height:${el.h}px">
         <div class="el__handle" data-h="se"></div><div class="el__rot" data-h="rot"></div>
       </div>`;
     }
-    return `<div class="el ${el.id === makeState.sel ? "is-sel" : ""}" data-el="${el.id}" style="left:${el.x}px;top:${el.y}px;width:${el.w}px;transform:rotate(${el.rot}rad);font-size:${el.size}px;font-weight:700;color:${el.color};line-height:1.25;white-space:normal;word-break:break-word;font-family:var(--sans)">
-      ${esc(el.text)}<div class="el__handle" data-h="se"></div><div class="el__rot" data-h="rot"></div>
+    return `<div class="el ${el.id === makeState.sel ? "is-sel" : ""}" data-el="${el.id}"
+      style="left:${el.x}px;top:${el.y}px;transform:rotate(${el.rot}rad)">
+      <div style="width:${el.w}px;font-size:${el.size}px;font-weight:700;color:${el.color};line-height:1.25;word-break:break-word;white-space:normal">${esc(el.text)}</div>
+      <div class="el__handle" data-h="se"></div><div class="el__rot" data-h="rot"></div>
     </div>`;
   }).join("");
   bindStageEvents(inner, outer);
@@ -1079,7 +1003,6 @@ function bindStageEvents(inner, outer) {
       if (!el) return;
       makeState.sel = el.id;
       document.querySelectorAll(".el").forEach(n => n.classList.toggle("is-sel", n === node));
-      // 记录文本元素真实高度
       if (el.type === "text") el.h = node.offsetHeight / stageScale;
       openTextPanel(el);
       const h = e.target.dataset.h;
@@ -1099,14 +1022,13 @@ function bindStageEvents(inner, outer) {
           el.rot = Math.atan2(py - cy, px - cx) + Math.PI / 2;
         }
         node.style.left = el.x + "px"; node.style.top = el.y + "px";
-        node.style.width = el.w + "px";
-        if (el.type === "img") node.style.height = el.h + "px";
         node.style.transform = `rotate(${el.rot}rad)`;
+        const im = node.querySelector(".el-img");
+        if (im) { im.style.width = el.w + "px"; im.style.height = el.h + "px"; }
+        const tx = node.querySelector("div:not(.el__handle):not(.el__rot)");
+        if (el.type === "text" && tx) tx.style.width = el.w + "px";
       };
-      const up = () => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-      };
+      const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
     });
@@ -1124,9 +1046,7 @@ function openTextPanel(el) {
     document.getElementById("tp-size").value = el.size;
     document.getElementById("tp-sizev").textContent = el.size;
     panel.querySelectorAll("[data-tc]").forEach(b => b.classList.toggle("is-on", b.dataset.tc === el.color));
-  } else {
-    panel.classList.remove("is-open");
-  }
+  } else panel.classList.remove("is-open");
 }
 function syncTextPanel() {
   const el = selEl();
@@ -1156,9 +1076,9 @@ function renderMakeStageKeepSel() {
   document.querySelectorAll(".el").forEach(n => n.classList.toggle("is-sel", n.dataset.el === sel));
 }
 
-/* 导出创作 */
+/* 导出 */
 async function exportMake() {
-  if (!makeState.els.length) { toast("画布还是空的,先加一点素材"); return; }
+  if (!makeState.els.length) { toast("画布是空的"); return; }
   const cv = document.createElement("canvas");
   cv.width = MAKE_W; cv.height = MAKE_H;
   const ctx = cv.getContext("2d");
@@ -1177,7 +1097,8 @@ async function exportMake() {
       ctx.restore();
     } else {
       ctx.save();
-      ctx.translate(el.x + el.w / 2, el.y + textHeight(el) / 2);
+      const h = textHeight(el);
+      ctx.translate(el.x + el.w / 2, el.y + h / 2);
       ctx.rotate(el.rot || 0);
       ctx.fillStyle = el.color;
       ctx.font = `700 ${el.size}px Arial, "PingFang SC", "Microsoft YaHei", sans-serif`;
@@ -1192,22 +1113,22 @@ async function exportMake() {
   const cr = { id: uid("cr"), title: "未命名创作", data, created: Date.now() };
   state.creations.unshift(cr); saveState();
   const ov = openModal(`
-    <div class="kicker" style="margin-bottom:8px">✎ 创作完成</div>
-    <h3 class="h3" style="margin-bottom:14px">已存入「我的创作」</h3>
-    <img src="${data}" style="width:100%;border:1px solid var(--line);border-radius:2px;margin-bottom:14px" alt="创作">
+    <h3>创作完成</h3>
+    <p class="modal__sub">已存入「我的档案 · 创作」</p>
+    <img src="${data}" style="width:100%;border:1px solid var(--line);border-radius:3px;margin-bottom:14px" alt="">
     <div class="field"><label>标题</label><input class="textin" id="cr-title" value="未命名创作" maxlength="24"></div>
     <div class="modal__acts">
-      <button class="btn btn--quiet" id="crx-close">关闭</button>
-      <button class="btn btn--primary" id="crx-dl">${I.down} 下载 PNG</button>
+      <button class="mkbtn" id="crx-close">关闭</button>
+      <button class="mkbtn mkbtn--dark" id="crx-dl">${I.down} 下载 PNG</button>
     </div>`);
   ov.querySelector("#crx-dl").addEventListener("click", () => {
     cr.title = ov.querySelector("#cr-title").value.trim() || "未命名创作";
     saveState();
-    downloadDataUrl(data, `${cr.title}-再观创作.png`);
+    downloadDataUrl(data, `${cr.title}-再观.png`);
   });
   ov.querySelector("#crx-close").addEventListener("click", () => {
     cr.title = ov.querySelector("#cr-title").value.trim() || "未命名创作";
-    saveState(); closeModal(); toast("已保存到「我的 Rijksstudio · 我的创作」", true);
+    saveState(); closeModal(); toast("已保存到我的档案");
   });
 }
 function wrapText(ctx, text, maxW) {
@@ -1226,12 +1147,8 @@ function textHeight(el) {
   m.font = `700 ${el.size}px Arial, "PingFang SC", sans-serif`;
   return wrapText(m, el.text, el.w).length * el.size * 1.25;
 }
-
-/* 窗口尺寸变化时重算画布缩放 */
 window.addEventListener("resize", () => {
-  if (location.hash.startsWith("#/make") && document.getElementById("mk-inner")) {
-    renderMakeStageKeepSel();
-  }
+  if (location.hash.startsWith("#/make") && document.getElementById("mk-inner")) renderMakeStageKeepSel();
 });
 
 /* ============================================================
@@ -1242,49 +1159,43 @@ function viewSettings() {
   const p = state.profile;
   view.innerHTML = `
   <div class="container page">
-    <div class="section-head mt-0" style="margin-top:26px">
-      <div><div class="kicker">Settings</div><h1 class="h-display h2">设置</h1></div>
-    </div>
-    <div class="settings-grid">
+    <div class="pagehead"><h1>设置</h1><span class="sub">资料 · 数据 · 关于</span></div>
+    <div class="setgrid">
       <div class="panel">
-        <h3 class="h3">个人资料</h3>
+        <h3>个人资料</h3>
         <div class="field">
-          <label>昵称(显示在 Rijksstudio)</label>
+          <label>昵称(显示在我的档案)</label>
           <input class="textin" id="pf-name" value="${esc(p.name)}" maxlength="16">
         </div>
-        <button class="btn btn--dark btn--sm" id="pf-save">保存</button>
+        <button class="mkbtn mkbtn--dark" id="pf-save">保存</button>
       </div>
       <div class="panel">
-        <h3 class="h3">我的数据</h3>
-        <p class="small grey" style="margin-bottom:16px">收藏、细节、收藏集、创作与笔记全部只存在这台浏览器的 localStorage。换设备前请先导出。</p>
+        <h3>我的数据</h3>
+        <p>块、频道、细节、创作与笔记全部只存在这台浏览器。换设备前请先导出。</p>
         <div class="row">
-          <button class="btn btn--ghost btn--sm" id="dt-export">${I.down} 导出 JSON</button>
-          <button class="btn btn--ghost btn--sm" id="dt-import">${I.plus} 导入</button>
-          <button class="btn btn--quiet btn--sm" id="dt-clear" style="color:var(--accent)">${I.trash} 清空全部</button>
+          <button class="mkbtn" id="dt-export">${I.down} 导出 JSON</button>
+          <button class="mkbtn" id="dt-import">${I.plus} 导入</button>
+          <button class="mkbtn" id="dt-clear" style="color:var(--red)">${I.trash} 清空全部</button>
           <input type="file" id="dt-file" accept="application/json" hidden>
         </div>
       </div>
       <div class="panel">
-        <h3 class="h3">关于再观</h3>
-        <div class="about-quote">
-          「再观」是一套观展后个人文化记忆系统:上传照片、识别线索、记录感受、形成档案。
-          本版界面复刻学习荷兰国立博物馆 Rijksstudio——业界公认最佳博物馆网站 UX
-          的三大支柱:<b>收藏作品 ♥ · 裁剪细节 ✂ · 用藏品再创作 ✎</b>。
-        </div>
-        <p class="small grey">内置藏品图均为程序化生成的示意画面,非博物馆原件影像。配色逐色提取自 rijksmuseum.nl 生产 CSS。</p>
+        <h3>关于再观</h3>
+        <p>「再观」是观展后的个人知识档案:上传照片、裁下细节、写下碎片、组织成频道。
+        本版形态参考 Are.na —— 设计师喜爱的共同知识档案平台;真实影像来自 Wikimedia Commons(公有领域 / CC)。
+        藏品数据与界面仅用于学习研究。</p>
       </div>
     </div>
   </div>`;
-
   document.getElementById("pf-save").addEventListener("click", () => {
     const v = document.getElementById("pf-name").value.trim();
-    if (v) { state.profile.name = v; saveState(); toast("已保存", true); }
+    if (v) { state.profile.name = v; saveState(); toast("已保存"); }
   });
   document.getElementById("dt-export").addEventListener("click", () => {
     const blob = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
     const a = document.createElement("a");
-    a.href = blob; a.download = `zaiguan-rijksstudio-${fmtDate(Date.now())}.json`;
-    a.click(); toast("数据已导出");
+    a.href = blob; a.download = `zaiguan-arena-${fmtDate(Date.now())}.json`;
+    a.click(); toast("已导出");
   });
   const file = document.getElementById("dt-file");
   document.getElementById("dt-import").addEventListener("click", () => file.click());
@@ -1297,13 +1208,13 @@ function viewSettings() {
         if (!data || typeof data !== "object" || !Array.isArray(data.likes)) throw 0;
         if (!confirm("导入会覆盖当前全部数据,继续?")) return;
         state = { ...structuredClone(DEFAULT_STATE), ...data };
-        saveState(); toast("数据已导入", true); render();
+        saveState(); toast("已导入"); render();
       } catch { toast("文件格式不对"); }
     };
     rd.readAsText(f);
   });
   document.getElementById("dt-clear").addEventListener("click", () => {
-    if (confirm("确定清空全部收藏、细节、收藏集与创作?此操作不可恢复。")) {
+    if (confirm("清空全部块、频道与创作?不可恢复。")) {
       state = structuredClone(DEFAULT_STATE);
       saveState(); toast("已清空"); render();
     }

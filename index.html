@@ -3,74 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#cc4c28">
-  <meta name="description" content="再观 Rijksstudio — 复刻荷兰国立博物馆最佳 UX:收藏作品、裁剪细节、用藏品进行个人再创作。让观看发生第二次。">
-  <title>再观 Rijksstudio · 让观看发生第二次</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23cc4c28'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle' fill='%23ffffff' font-family='Songti SC,STSong,serif' font-weight='700'%3E观%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="再观 Arena — 观展后的个人知识档案:把碎片收进频道,安静地组织你的观看。设计师式的共同知识档案,为观展记忆而作。">
+  <title>再观 · 让观看留下痕迹</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2316171E'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle' fill='%23ffffff' font-family='Songti SC,STSong,serif'%3E观%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="header">
-    <div class="container header__inner">
-      <a class="logo" href="#/">
-        <span class="logo__mark">观</span>
-        <span class="logo__word"><b>再观</b><i>Rijksstudio</i></span>
-      </a>
-      <form class="search" id="search-form" role="search">
-        <input type="search" id="search-input" placeholder="搜索藏品 / 艺术家 / 色系…" autocomplete="off">
-        <button class="search__go" type="submit" aria-label="搜索">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-        </button>
-      </form>
-      <nav class="nav" id="main-nav">
-        <a href="#/collection" data-nav="collection">馆藏<span class="nav__lbl"> Collection</span></a>
-        <a href="#/studio" data-nav="studio">我的 Rijksstudio<span class="nav__lbl"></span></a>
-        <a href="#/make" data-nav="make">创作<span class="nav__lbl"> Make</span></a>
-        <a href="#/settings" data-nav="settings">设置<span class="nav__lbl"></span></a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="logo" href="#/"><span class="logo__zh">再观</span><span class="logo__en">arena</span></a>
+      <nav class="topnav">
+        <a href="#/" data-nav="home">探索</a>
+        <a href="#/channels" data-nav="channels">频道</a>
+        <a href="#/me" data-nav="me">我的档案</a>
+        <a href="#/make" data-nav="make">创作</a>
+        <a href="#/settings" data-nav="settings">设置</a>
       </nav>
+      <div class="topbar__right">
+        <form class="q" id="search-form" role="search">
+          <input type="search" id="search-input" placeholder="搜索块 / 艺术家 / 频道" autocomplete="off">
+        </form>
+        <button class="addbtn" id="add-btn" title="添加块">＋</button>
+      </div>
     </div>
   </header>
 
   <main id="view" aria-live="polite"></main>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__inner">
-        <div>
-          <a class="logo" href="#/" style="margin-bottom:14px">
-            <span class="logo__mark">观</span>
-            <span class="logo__word"><b>再观</b><i>Rijksstudio</i></span>
-          </a>
-          <p style="font-size:.84rem;max-width:32em;line-height:1.9">
-            观展之后,观看不止。收藏你停下来的瞬间,裁下打动你的细节,
-            用馆藏完成一次自己的创作——从看见,到记住,再到理解。
-          </p>
-        </div>
-        <div>
-          <h4>探索</h4>
-          <ul>
-            <li><a href="#/collection">馆藏 Collection</a></li>
-            <li><a href="#/collection?hue=zhusha">朱砂色系藏品</a></li>
-            <li><a href="#/collection?upload=1">上传观展照片</a></li>
-            <li><a href="#/make">创作 Make</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>我的</h4>
-          <ul>
-            <li><a href="#/studio">我的 Rijksstudio</a></li>
-            <li><a href="#/studio?tab=sets">收藏集</a></li>
-            <li><a href="#/studio?tab=crops">细节墙</a></li>
-            <li><a href="#/settings">设置与数据</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer__bottom">
-        <span>再观 Zaiguan · 观展后个人文化记忆系统</span>
-        <span>界面复刻学习自 rijksmuseum.nl / Rijksstudio · 数据仅存于本机浏览器</span>
-      </div>
-    </div>
-  </footer>
 
   <div id="overlay-root"></div>
   <div id="toast-root" aria-live="assertive"></div>
