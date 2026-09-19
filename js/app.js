@@ -64,7 +64,7 @@ function workCard(w) {
   <a class="wcard" href="#/work/${encodeURIComponent(w.id)}">
     ${w.kind === "photo" ? '<span class="wcard__tag">我的照片</span>' : ""}
     <button class="wcard__heart ${liked ? "is-on" : ""}" data-heart="${w.id}" aria-label="收藏">${liked ? I.heart : I.heartO}</button>
-    <img class="wcard__img" src="${workImage(w, 480)}" alt="${esc(w.name)}" loading="lazy"
+    <img class="wcard__img" src="${workImage(w, 480)}" alt="${esc(w.name)}" loading="lazy" data-fb="${esc(w.id)}"
          width="${Math.round(480 * (w.ar >= 1 ? 1 : w.ar))}" height="${Math.round(480 / (w.ar >= 1 ? w.ar : 1))}">
     <div class="wcard__body">
       <div class="wcard__name"><span class="wcard__hue" style="background:${hue.dot}"></span>${esc(w.name)}</div>
@@ -83,6 +83,16 @@ document.addEventListener("click", e => {
   h.innerHTML = on ? I.heart : I.heartO;
   toast(on ? `${I.heart} 已收藏 · 进入「我的 Rijksstudio」` : "已取消收藏");
 });
+
+/* 真实影像加载失败 → 程序化兜底图(站点离线也可用) */
+document.addEventListener("error", e => {
+  const t = e.target;
+  if (!t || t.tagName !== "IMG" || !t.dataset.fb) return;
+  const w = workById(t.dataset.fb);
+  t.removeAttribute("data-fb");
+  if (!w || w.kind === "photo") return;
+  t.src = fallbackImage(w);
+}, true);
 
 /* ============================================================
    路由
@@ -128,7 +138,7 @@ function render() {
 function viewHome() {
   setActiveNav("");
   const heroArts = [KB[0], KB[7], KB[21]].map((w, i) =>
-    `<img src="${workImage(w, 640)}" alt="" style="${[
+    `<img src="${workImage(w, 1080)}" data-fb="${esc(w.id)}" alt="" style="${[
       "left:-6%;top:-8%;width:62%;height:118%",
       "right:-8%;top:0;width:56%;height:100%",
       "left:24%;bottom:-14%;width:52%;height:76%",
@@ -309,7 +319,7 @@ function viewWork(id) {
       <div>
         <div class="viewer" id="viewer">
           <div class="viewer__stage" id="vstage">
-            <img class="viewer__img" id="vimg" alt="${esc(w.name)}" src="${workImage(w, 1080)}" draggable="false">
+            <img class="viewer__img" id="vimg" alt="${esc(w.name)}" src="${workImage(w, 1080)}" crossorigin="anonymous" data-fb="${esc(w.id)}" draggable="false">
           </div>
           <div class="viewer__hint" id="vhint">滚轮缩放 · 拖动平移 · 双击放大</div>
           <div class="viewer__bar" id="vbar">
@@ -343,6 +353,7 @@ function viewWork(id) {
           <tr><th>类别</th><td>${esc(w.category)}</td></tr>
           <tr><th>色系</th><td><span class="wcard__hue" style="background:${hue.dot}"></span>${hue.name}</td></tr>
           <tr><th>馆藏</th><td>${esc(w.collection)}</td></tr>
+          ${w.src ? `<tr><th>信息来源</th><td><a class="link" href="https://commons.wikimedia.org/wiki/${encodeURIComponent(w.src)}" target="_blank" rel="noopener"><span>Wikimedia Commons</span></a></td></tr>` : ""}
         </table>
 
         ${w.desc ? `<p class="workinfo__desc">${esc(w.desc)}</p>` : ""}
@@ -361,7 +372,11 @@ function viewWork(id) {
 
   initViewer(w);
   document.getElementById("v-dl").addEventListener("click", () => {
-    downloadDataUrl(workImage(w, 1080), `${w.name}-再观.jpg`);
+    // 跨域图片 <a download> 不生效,经 blob 落地
+    fetch(workImage(w, 1080))
+      .then(r => r.blob())
+      .then(b => downloadDataUrl(URL.createObjectURL(b), `${w.name}-再观.jpg`))
+      .catch(() => downloadDataUrl(workImage(w, 1080), `${w.name}-再观.jpg`));
   });
   document.getElementById("act-like").addEventListener("click", () => {
     const on = toggleLike(id);
@@ -393,27 +408,36 @@ function initViewer(w) {
   const stage = document.getElementById("vstage");
   const img = document.getElementById("vimg");
   const hint = document.getElementById("vhint");
-  let s = 1, tx = 0, ty = 0, fitS = 1;
+  let s = 1, tx = 0, ty = 0, fitS = 1, userTouched = false;
 
   const apply = () => { img.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; };
   const doFit = () => {
     const r = stage.getBoundingClientRect();
+    if (r.width < 40 || !img.naturalWidth) return;
     fitS = Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight) * 0.96;
     s = fitS;
     tx = (r.width - img.naturalWidth * s) / 2;
     ty = (r.height - img.naturalHeight * s) / 2;
     apply();
   };
+  // 缓存图 complete 立即为真,需等布局稳定(双 rAF)再适配,200ms 后再校正一次
+  const scheduleFit = () => requestAnimationFrame(() => requestAnimationFrame(() => { if (!userTouched) doFit(); }));
+  img.addEventListener("load", scheduleFit, { once: true });
+  if (img.complete && img.naturalWidth) scheduleFit();
+  [100, 300, 700].forEach(d => setTimeout(() => { if (!userTouched && !cropMode) doFit(); }, d));
+  let rsT = null; // 防抖:面板动画等瞬态尺寸不参与适配
+  window.addEventListener("resize", () => {
+    clearTimeout(rsT);
+    rsT = setTimeout(() => { if (!cropMode) doFit(); }, 150);
+  });
+
   const zoomAt = (mx, my, f) => {
+    userTouched = true;
     const ns = Math.min(12, Math.max(fitS * 0.5, s * f));
     tx = mx - (mx - tx) * (ns / s);
     ty = my - (my - ty) * (ns / s);
     s = ns; apply();
   };
-
-  img.addEventListener("load", doFit, { once: true });
-  if (img.complete && img.naturalWidth) doFit();
-  window.addEventListener("resize", () => { if (!cropMode) doFit(); });
 
   stage.addEventListener("wheel", e => {
     e.preventDefault();
@@ -424,6 +448,7 @@ function initViewer(w) {
   let pan = null;
   stage.addEventListener("pointerdown", e => {
     if (cropMode || e.target.closest(".cropbox")) return;
+    userTouched = true;
     pan = { x: e.clientX - tx, y: e.clientY - ty, id: e.pointerId };
     try { stage.setPointerCapture(e.pointerId); } catch {}
   });
@@ -1138,7 +1163,7 @@ async function exportMake() {
   const ctx = cv.getContext("2d");
   ctx.fillStyle = makeState.bg;
   ctx.fillRect(0, 0, MAKE_W, MAKE_H);
-  const loads = src => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+  const loads = src => new Promise(res => { const im = new Image(); im.crossOrigin = "anonymous"; im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
   const sorted = [...makeState.els].sort((a, b) => a.z - b.z);
   for (const el of sorted) {
     if (el.type === "img") {
